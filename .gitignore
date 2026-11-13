@@ -1,0 +1,15 @@
+data/
+_data_raw/
+*.parquet
+*.csv
+!samples/*.csv
+mlruns/
+artifacts/
+models/*.pkl
+models/*.joblib
+__pycache__/
+*.pyc
+.venv/
+.env
+.ipynb_checkpoints/
+.pytest_cache/
