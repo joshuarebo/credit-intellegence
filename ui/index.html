@@ -293,7 +293,7 @@ ul.clean{margin:0;padding-left:18px;display:grid;gap:4px}
     <div class="panel"><h3>The groups, squashed onto two axes (PCA)</h3><canvas id="pca" style="width:100%;aspect-ratio:4/3;max-width:100%"></canvas><div class="legend" id="pcaLegend"></div></div>
     <div class="panel"><h3>How many groups? (elbow and silhouette)</h3><div id="elbow"></div><p class="muted small">Inertia keeps falling as K grows. Pick the K where it stops falling fast and the silhouette (how well-separated the groups are) holds up.</p></div>
   </div>
-  <div class="grid4" id="segcards"></div>
+  <div class="glossary" id="segcards"></div>
   <div class="panel">
     <h3>The KES 380M jersey question needs causal measurement, not clustering</h3>
     <p class="muted small" style="margin-bottom:12px">Difference-in-differences: compare new-user growth in wards with high exposure (Nairobi United fan base) against similar wards without, before and after the shirt deal. Change the example numbers.</p>
@@ -693,9 +693,9 @@ function buildPresets() {
 }
 
 /* ---------------- segments ---------------- */
-const SEGC = ['--s1', '--s2', '--s3', '--s4'];
+const SEGC = ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6', '--s7'];
 function segName(s, all) {
-  const med = k => all.map(x => x[k]).sort((a, b) => a - b)[1];
+  const med = k => all.map(x => x[k]).sort((a, b) => a - b)[Math.floor(all.length / 2)];
   const parts = [];
   parts.push(s.age < 38 ? 'Young' : s.age > 50 ? 'Older' : 'Mid-career');
   parts.push(s.income > med('income') ? 'higher-income' : 'lower-income');
@@ -718,7 +718,7 @@ function renderSegments() {
   s += S.elbow.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1] / e0)}" r="3" fill="${css('--s1')}"/>`).join('');
   s += `<path d="${S.silhouette.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ',' + Y(p[1] / sMax)).join('')}" fill="none" stroke="${css('--s2')}" stroke-width="2" stroke-dasharray="5 3"/>`;
   s += S.silhouette.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1] / sMax)}" r="3" fill="${css('--s2')}"/>`).join('');
-  s += `<line x1="${X(4)}" x2="${X(4)}" y1="${T}" y2="${H - B}" stroke="${css('--muted')}" stroke-dasharray="2 3"/><text x="${X(4) + 4}" y="${T + 10}">chosen K = 4</text>`;
+  s += `<line x1="${X(S.k)}" x2="${X(S.k)}" y1="${T}" y2="${H - B}" stroke="${css('--muted')}" stroke-dasharray="2 3"/><text x="${X(S.k) - 4}" y="${T + 10}" text-anchor="end">chosen K = ${S.k} (best silhouette)</text>`;
   s += `<text x="${L}" y="${H - 2}" style="fill:${css('--s1')}">— inertia (relative)</text><text x="${W - R}" y="${H - 2}" text-anchor="end" style="fill:${css('--s2')}">- - silhouette</text></svg>`;
   $('#elbow').innerHTML = s;
 }

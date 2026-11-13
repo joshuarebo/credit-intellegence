@@ -231,7 +231,7 @@ def main(raw: Path):
         "Borderline": te2[(te2.p_ebm.between(0.10, 0.12))].iloc[0],
         "Late-payment history": te2[(te2.TARGET == 1) & (te2.LATE_SHARE > 0.3)].iloc[0],
         "Thin file (no bureau score)": te2[te2.BUREAU_SCORE_3.isna() & te2.N_PAST_INSTALMENTS.isna()].iloc[0],
-        "High risk": te2[(te2.TARGET == 1) & (te2.p_ebm > 0.35)].iloc[0],
+        "High risk": te2[(te2.TARGET == 1) & (te2.p_ebm > 0.35) & (te2.LATE_SHARE.fillna(0) < 0.3)].iloc[0],
     }
     presets = [{"name": n, "actual": int(r.TARGET),
                 "x": {f: (None if pd.isna(r[f]) else round(float(r[f]), 4)) for f in FEAT}} for n, r in picks.items()]
@@ -247,10 +247,11 @@ def main(raw: Path):
         km = KMeans(n_clusters=k, n_init=5, random_state=SEED).fit(Sz)
         elbow.append([k, float(km.inertia_)])
         sil.append([k, float(silhouette_score(Sz[sub], km.labels_[sub]))])
-    km = KMeans(n_clusters=4, n_init=10, random_state=SEED).fit(Sz)
+    best_k = max(sil, key=lambda kv: kv[1])[0]  # pick K by silhouette
+    km = KMeans(n_clusters=best_k, n_init=10, random_state=SEED).fit(Sz)
     lab = km.labels_
     prof = []
-    for c in range(4):
+    for c in range(best_k):
         m = lab == c
         prof.append({"id": c, "size": int(m.sum()), "age": float(te.AGE.values[m].mean()),
                      "income": float(np.median(te.INCOME.values[m])),
@@ -261,7 +262,7 @@ def main(raw: Path):
     pca = PCA(n_components=2, random_state=SEED).fit(Sz)
     pts_idx = rng.choice(len(Sz), 1800, replace=False)
     P = pca.transform(Sz[pts_idx])
-    seg = {"cols": seg_cols, "elbow": elbow, "silhouette": sil, "profiles": prof,
+    seg = {"k": int(best_k), "cols": seg_cols, "elbow": elbow, "silhouette": sil, "profiles": prof,
            "pca_var": pca.explained_variance_ratio_.tolist(),
            "points": [[round(float(a), 3), round(float(b), 3), int(lab[i])] for (a, b), i in zip(P, pts_idx)]}
 
