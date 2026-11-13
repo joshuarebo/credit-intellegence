@@ -266,7 +266,37 @@ def main(raw: Path):
            "pca_var": pca.explained_variance_ratio_.tolist(),
            "points": [[round(float(a), 3), round(float(b), 3), int(lab[i])] for (a, b), i in zip(P, pts_idx)]}
 
+    # ---------- teaching exports: show HOW each family works, on our real data ----------
+    # 1) A tiny 2-question tree on raw (median-filled) features, so people can read it.
+    Xi = pd.DataFrame(imputer.transform(Xtr), columns=FEAT)
+    small = DecisionTreeClassifier(max_depth=2, min_samples_leaf=5000, random_state=SEED).fit(Xi, ytr)
+    st = small.tree_
+
+    def tree_json(i=0):
+        v = st.value[i][0]
+        node = {"n": int(st.n_node_samples[i]), "rate": float(v[1] / v.sum())}
+        if st.children_left[i] != -1:
+            node.update({"f": FEAT[st.feature[i]], "t": float(st.threshold[i]),
+                         "y": tree_json(st.children_left[i]), "no": tree_json(st.children_right[i])})
+        return node
+
+    # 2) Boosting: accuracy as trees are added one after another.
+    xgbm = fitted["xgb"]
+    boost_curve = [[k, float(roc_auc_score(yte, xgbm.predict_proba(Xte, iteration_range=(0, k))[:, 1]))]
+                   for k in (1, 3, 10, 25, 50, 100, 250, 500)]
+    # 3) Bagging: accuracy as more independent trees are averaged.
+    trees_p = np.array([t.predict_proba(Zte)[:, 1] for t in fitted["forest"].estimators_])
+    forest_curve = [[k, float(roc_auc_score(yte, trees_p[:k].mean(0)))] for k in (1, 3, 10, 30, 100, 300)]
+    # 4) Drift check (Population Stability Index) between train and test EBM scores.
+    p_tr = fitted["ebm"].predict_proba(Xtr)[:, 1]
+    edges = np.quantile(p_tr, np.linspace(0, 1, 11)); edges[0], edges[-1] = -np.inf, np.inf
+    a = np.histogram(p_tr, edges)[0] / len(p_tr); b = np.histogram(preds["ebm"], edges)[0] / len(yte)
+    psi = float(np.sum((b - a) * np.log((b + 1e-6) / (a + 1e-6))))
+    teach = {"tree": tree_json(), "boost_curve": boost_curve, "forest_curve": forest_curve, "psi": psi}
+    print("teach", boost_curve[0], boost_curve[-1], forest_curve[0], forest_curve[-1], "psi", round(psi, 4))
+
     data = {
+        "teach": teach,
         "meta": {"rows": int(len(df)), "train": int(len(tr)), "test": int(len(te)),
                  "default_rate": float(df.TARGET.mean()), "test_defaults": int(yte.sum()),
                  "built": time.strftime("%Y-%m-%d")},
