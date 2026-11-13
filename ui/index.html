@@ -1,0 +1,763 @@
+<title>Zuri Credit Intelligence</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky tab bar over one working view at a time; each view = summary row, then detail grid */
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --sunk:#eaefed; --line:#d5ddda; --fg:#15201c; --muted:#5a6964;
+  --accent:#1d5fd1; --accent-soft:#e3ecfb; --accent-fg:#ffffff;
+  --ok:#17804f; --ok-soft:#dcf1e6; --warn:#a8630a; --warn-soft:#fbecd5; --bad:#c2372f; --bad-soft:#f9e0de;
+  --s1:#1d5fd1; --s2:#d07a12; --s3:#13897a; --s4:#a03f9a; --s5:#6b7a2a; --s6:#c2372f; --s7:#56636e;
+  --font-display:"Space Grotesk",system-ui,sans-serif; --font-body:"IBM Plex Sans",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1513; --surface:#171f1c; --sunk:#1e2824; --line:#2c3a35; --fg:#e4ebe8; --muted:#97a6a0;
+  --accent:#6f9cf2; --accent-soft:#1c2a45; --accent-fg:#0b1220;
+  --ok:#4cc68a; --ok-soft:#163327; --warn:#e3a346; --warn-soft:#3a2b12; --bad:#f07b72; --bad-soft:#3d1c1a;
+  --s1:#6f9cf2; --s2:#e3a346; --s3:#3fc1ae; --s4:#d27bcc; --s5:#a9b95a; --s6:#f07b72; --s7:#9aa7b2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1513; --surface:#171f1c; --sunk:#1e2824; --line:#2c3a35; --fg:#e4ebe8; --muted:#97a6a0;
+  --accent:#6f9cf2; --accent-soft:#1c2a45; --accent-fg:#0b1220;
+  --ok:#4cc68a; --ok-soft:#163327; --warn:#e3a346; --warn-soft:#3a2b12; --bad:#f07b72; --bad-soft:#3d1c1a;
+  --s1:#6f9cf2; --s2:#e3a346; --s3:#3fc1ae; --s4:#d27bcc; --s5:#a9b95a; --s6:#f07b72; --s7:#9aa7b2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:1.6rem}h2{font-size:1.3rem}h3{font-size:1.05rem}
+p{margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.15}
+.brand b{font-family:var(--font-display);font-size:1.05rem}
+.brand span{font-size:.75rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav.tabs a{padding:7px 12px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:500;font-size:.9rem}
+nav.tabs a:hover{background:var(--sunk);color:var(--fg)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:24px 64px}
+section.view{display:grid;gap:20px}
+.lede{display:grid;gap:6px;max-width:72ch}
+.lede p{color:var(--muted)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.panel>h3{margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.grid-side{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.grid2,.grid-side,.grid3{grid-template-columns:minmax(0,1fr)}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.mono,.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.stat{display:grid;gap:2px}
+.stat .k{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat .v{font-family:var(--font-mono);font-size:1.45rem;font-weight:500}
+.stat .d{font-size:.8rem;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}.chip.info{background:var(--accent-soft);color:var(--accent)}
+.chip.neutral{background:var(--sunk);color:var(--muted)}
+button.btn{font:inherit;font-size:.88rem;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;border-radius:8px;cursor:pointer}
+button.btn:hover{border-color:var(--accent)}
+button.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right}
+tr.sel td{background:var(--accent-soft)}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--sunk)}
+tbody.static tr{cursor:default}tbody.static tr:hover td{background:none}
+.formula{font-family:var(--font-mono);background:var(--sunk);border-radius:8px;padding:12px 14px;font-size:.95rem;overflow-x:auto;white-space:nowrap}
+.formula sub,.formula sup{font-size:.7em}
+svg text{fill:var(--muted);font-family:var(--font-mono);font-size:10px}
+svg .axis{stroke:var(--line)}
+label.field{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
+input[type=number],select{font:inherit;font-size:.9rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.88rem}
+.kv dt{font-family:var(--font-mono);color:var(--accent)}
+.kv dd{margin:0}
+ul.clean{margin:0;padding-left:18px;display:grid;gap:4px}
+/* architecture */
+.stack{display:grid;gap:6px}
+.layer{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;text-align:left;font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 12px;border-radius:8px;cursor:pointer}
+.layer .tag{font-family:var(--font-mono);font-size:.78rem;color:var(--muted)}
+.layer b{font-weight:600}
+.layer small{display:block;color:var(--muted);font-size:.8rem}
+.layer:hover{border-color:var(--accent)}
+.layer[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.layer.intel{background:var(--accent-soft);border-style:dashed;border-color:var(--accent)}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.flow{grid-template-columns:minmax(0,1fr)}}
+.step{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:4px;background:var(--surface)}
+.step.on{border-color:var(--accent);background:var(--accent-soft)}
+.step .n{font-family:var(--font-mono);font-size:.75rem;color:var(--accent)}
+/* algorithms */
+.alist{display:grid;gap:6px}
+.alist button{font:inherit;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.alist button:hover{border-color:var(--accent)}
+.alist button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.alist .fam{font-size:.72rem;color:var(--muted);display:block}
+.proscons{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:600px){.proscons{grid-template-columns:minmax(0,1fr)}}
+.proscons h4{margin:0 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.glossary{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.gl{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.gl b{font-family:var(--font-mono);color:var(--accent);font-weight:500}
+.gl p{font-size:.85rem;color:var(--muted)}
+/* scorer */
+.feat{display:grid;gap:2px;padding:8px 0;border-bottom:1px solid var(--line)}
+.feat .row{display:flex;justify-content:space-between;gap:8px;font-size:.84rem;align-items:baseline}
+.feat .row span:last-child{font-family:var(--font-mono)}
+.feat .sub{font-size:.74rem;color:var(--muted)}
+.feat .unk{font-size:.74rem;color:var(--muted);display:flex;gap:4px;align-items:center}
+.pdcard{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:6px}
+.pdcard .v{font-family:var(--font-mono);font-size:1.8rem}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:.82rem}
+.bar .track{position:relative;height:14px;background:var(--sunk);border-radius:3px}
+.bar .track i{position:absolute;top:0;bottom:0;border-radius:3px}
+.bar .track .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.bar span:last-child{font-family:var(--font-mono);text-align:right}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:.84rem}
+.cm div{padding:10px;border-radius:6px;background:var(--sunk)}
+.cm .h{background:none;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;padding:4px}
+.cm .good{background:var(--ok-soft)}.cm .loss{background:var(--bad-soft)}.cm .miss{background:var(--warn-soft)}
+.cm b{display:block;font-family:var(--font-mono);font-size:1.1rem}
+.note{border-left:3px solid var(--accent);padding:8px 12px;background:var(--accent-soft);border-radius:0 6px 6px 0;font-size:.88rem}
+.seg{display:grid;gap:6px;border:1px solid var(--line);border-radius:8px;padding:12px}
+.seg .sw{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
+@media (prefers-reduced-motion:no-preference){.layer,.alist button,button.btn,.step{transition:border-color .15s,background .15s}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><b>Zuri Credit Intelligence</b><span>Intelligence layer · PI-1 prototype</span></div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#architecture">Where it fits</a>
+      <a href="#algorithms">Algorithms</a>
+      <a href="#lab">Model lab</a>
+      <a href="#scorer">Score an applicant</a>
+      <a href="#segments">Segments</a>
+      <a href="#verdict">Verdict</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ ARCHITECTURE ============ -->
+<section class="view" id="v-architecture">
+  <div class="lede">
+    <span class="eyebrow">Where it fits</span>
+    <h1>Zuri tells partners what happened. The intelligence layer tells them what to do next.</h1>
+    <p>Click a layer to see what it does. The dashed layer is empty today: the architecture reserves it as <b>Predictive Analytics PI-1…4, planned Q4 2026</b>. This prototype is PI-1.</p>
+  </div>
+  <div class="grid-side">
+    <div class="stack" id="stack"></div>
+    <div class="panel" id="layerDetail"></div>
+  </div>
+  <div class="panel">
+    <h3>What happens in one credit request</h3>
+    <p class="muted small" style="margin-bottom:12px">Step through a live <span class="mono">/score</span> call. Timings are design targets; model compute is measured in the Model lab.</p>
+    <div class="flow" id="flow"></div>
+    <div class="btnrow" style="margin-top:12px"><button class="btn" id="flowPrev">Back</button><button class="btn" id="flowNext">Next step</button></div>
+  </div>
+  <div class="panel">
+    <h3>Four questions partners ask, four kinds of model</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Partner question</th><th>Kind of problem</th><th>Model family</th><th>Output</th></tr></thead>
+      <tbody id="qtable" class="static"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ ALGORITHMS ============ -->
+<section class="view" id="v-algorithms" hidden>
+  <div class="lede">
+    <span class="eyebrow">Algorithms</span>
+    <h1>Every candidate, explained from the formula up</h1>
+    <p>Running example: Wanjiku asks for a KES 5,000 loan. Each card shows the formula, what every symbol means, an analogy, and what the model actually scored on 61,503 held-out loans.</p>
+  </div>
+  <details class="panel" open>
+    <summary><b>Words first</b> <span class="muted small">— the eight terms every formula below uses</span></summary>
+    <div class="glossary" id="glossary" style="margin-top:12px"></div>
+  </details>
+  <div class="grid-side">
+    <div class="alist" id="alist"></div>
+    <div class="panel" id="adetail"></div>
+  </div>
+</section>
+
+<!-- ============ LAB ============ -->
+<section class="view" id="v-lab" hidden>
+  <div class="lede">
+    <span class="eyebrow">Model lab</span>
+    <h1>Same data, same test, seven models. Ranked by money, not by accuracy.</h1>
+    <p id="labMeta"></p>
+  </div>
+  <div class="panel">
+    <div class="grid4">
+      <label class="field">Loan size (KES)<input type="number" id="inLoan" value="5000" min="500" step="500"></label>
+      <label class="field">Fee / interest earned if repaid (%)<input type="number" id="inFee" value="10" min="1" max="60" step="1"></label>
+      <label class="field">Loss if defaulted (% of loan)<input type="number" id="inLgd" value="80" min="10" max="100" step="5"></label>
+      <label class="field">Cut-off rule
+        <select id="inMode"><option value="opt">Best cut-off per model (max profit)</option><option value="manual">Same manual cut-off for all</option></select>
+      </label>
+    </div>
+    <div id="manualRow" hidden style="margin-top:12px">
+      <label class="field">Manual cut-off: decline if probability of default ≥ <span class="mono" id="cutLbl"></span><input type="range" id="inCut" min="0" max="76" value="18"></label>
+    </div>
+    <p class="note" style="margin-top:12px" id="breakeven"></p>
+  </div>
+  <div class="panel">
+    <h3>Leaderboard <span class="muted small">(click a row to inspect)</span></h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Model</th><th class="num" title="Ranking power: chance a random defaulter scores riskier than a random payer">AUC</th><th class="num">Gini</th><th class="num">KS</th><th class="num" title="Probability honesty: lower is better">Brier</th><th class="num">Cut-off</th><th class="num">Approved</th><th class="num">Profit / 10k applicants</th><th class="num">vs approve-all</th><th>Explainability</th><th class="num">Score time</th></tr></thead>
+      <tbody id="board"></tbody>
+    </table></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3 id="cmTitle">Outcomes per 10,000 applicants</h3>
+      <div class="cm" id="cm"></div>
+      <p class="muted small" style="margin-top:10px" id="cmNote"></p>
+    </div>
+    <div class="panel">
+      <h3>Profit as the cut-off moves</h3>
+      <div id="profitChart"></div>
+      <div class="legend" id="profitLegend"></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Ranking power (ROC curve)</h3>
+      <div id="rocChart"></div>
+      <p class="muted small">Higher and further left is better. The diagonal is a coin flip. AUC = area under this curve; banks report Gini = 2·AUC − 1.</p>
+    </div>
+    <div class="panel">
+      <h3>Are the probabilities honest? (calibration)</h3>
+      <div id="calChart"></div>
+      <p class="muted small">Each dot is a tenth of applicants. On the diagonal = "said 10%, and 10% defaulted". Pricing and the cut-off formula both need this.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Fairness check at this cut-off <span class="muted small" id="fairModel"></span></h3>
+    <p class="muted small" style="margin-bottom:10px">Gender and age are never model inputs. We still check whether approvals and outcomes differ across groups.</p>
+    <div class="scroll"><table><thead><tr><th>Group</th><th class="num">Applicants (test)</th><th class="num">Approval rate</th><th class="num">Default rate among approved</th></tr></thead><tbody id="fair" class="static"></tbody></table></div>
+  </div>
+</section>
+
+<!-- ============ SCORER ============ -->
+<section class="view" id="v-scorer" hidden>
+  <div class="lede">
+    <span class="eyebrow">Score an applicant</span>
+    <h1>Move any input and watch three models decide, and explain why</h1>
+    <p>These are the trained models running in your browser. Pick a real held-out applicant, then change things: what if her late repayments were halved?</p>
+  </div>
+  <div class="btnrow" id="presets"></div>
+  <div class="grid-side">
+    <div class="panel" id="inputs" style="padding-top:8px"></div>
+    <div style="display:grid;gap:20px;min-width:0">
+      <div class="grid3" id="pdcards"></div>
+      <div class="panel">
+        <h3>Why: reasons for this decision</h3>
+        <div class="btnrow" id="reasonTabs" style="margin-bottom:12px"></div>
+        <div class="legend" style="margin-bottom:10px"><span><i style="background:var(--bad)"></i>pushes risk up</span><span><i style="background:var(--ok)"></i>pushes risk down</span></div>
+        <div class="bars" id="reasonBars"></div>
+        <div style="margin-top:14px" id="reasonText"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SEGMENTS ============ -->
+<section class="view" id="v-segments" hidden>
+  <div class="lede">
+    <span class="eyebrow">Segments</span>
+    <h1>No label, just groups: who are our customers, and where is the opportunity?</h1>
+    <p>K-means on five features of the held-out applicants. On Safaricom data the same method runs on ward or H3-cell aggregates (k ≥ 15 per cell), never on individuals.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>The groups, squashed onto two axes (PCA)</h3><canvas id="pca" style="width:100%;aspect-ratio:4/3;max-width:100%"></canvas><div class="legend" id="pcaLegend"></div></div>
+    <div class="panel"><h3>How many groups? (elbow and silhouette)</h3><div id="elbow"></div><p class="muted small">Inertia keeps falling as K grows. Pick the K where it stops falling fast and the silhouette (how well-separated the groups are) holds up.</p></div>
+  </div>
+  <div class="grid4" id="segcards"></div>
+  <div class="panel">
+    <h3>The KES 380M jersey question needs causal measurement, not clustering</h3>
+    <p class="muted small" style="margin-bottom:12px">Difference-in-differences: compare new-user growth in wards with high exposure (Nairobi United fan base) against similar wards without, before and after the shirt deal. Change the example numbers.</p>
+    <div class="grid4">
+      <label class="field">Exposed wards: new users / week before<input type="number" id="d1" value="1200"></label>
+      <label class="field">Exposed wards: after<input type="number" id="d2" value="1560"></label>
+      <label class="field">Comparison wards: before<input type="number" id="d3" value="1100"></label>
+      <label class="field">Comparison wards: after<input type="number" id="d4" value="1265"></label>
+    </div>
+    <div class="grid3" style="margin-top:14px" id="did"></div>
+  </div>
+</section>
+
+<!-- ============ VERDICT ============ -->
+<section class="view" id="v-verdict" hidden>
+  <div class="lede">
+    <span class="eyebrow">Verdict</span>
+    <h1>Not linear regression vs XGBoost. Three tiers, one profit test.</h1>
+    <p id="verdictLede"></p>
+  </div>
+  <div class="grid3" id="tiers"></div>
+  <div class="grid2">
+    <div class="panel"><h3>How a decline is explained</h3><ul class="clean small">
+      <li>Top 3 reason codes from the model, in plain words.</li>
+      <li>A counterfactual: "repay on time for two months and you qualify".</li>
+      <li>Grey zone near the cut-off: starter loan or human review, so a model error never costs a good customer outright.</li>
+      <li>Meets the Data Protection Act's rules on decisions made only by automated processing.</li>
+    </ul></div>
+    <div class="panel"><h3>What we need to decide together</h3><ul class="clean small">
+      <li>Target: default = 30 or 60 days past due?</li>
+      <li>Real margin and loss per loan for the pilot partner (they drive the cut-off).</li>
+      <li>First pilot: Aventus (LendPlus) or M-KOPA?</li>
+      <li>Consented Safaricom feature sample in Doris after the 25 Nov MVP.</li>
+    </ul></div>
+  </div>
+  <p class="muted small">Prototype on the public Home Credit dataset (307,511 loans to thin-file borrowers). It proves the method; the numbers must be re-earned on Safaricom data. Dates in the public copy are synthetic, so testing uses a stratified 20% holdout.</p>
+</section>
+
+</main>
+
+<script src="demo_data.js"></script>
+<script>
+(() => {
+const D = window.DEMO;
+const $ = s => document.querySelector(s);
+const el = (t, a = {}, h = '') => { const e = document.createElement(t); for (const k in a) e.setAttribute(k, a[k]); e.innerHTML = h; return e; };
+const fmt = (v, d = 0) => Number(v).toLocaleString('en-KE', {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
+const kes = v => (v < 0 ? '−' : '') + 'KES ' + fmt(Math.abs(v));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sig = z => 1 / (1 + Math.exp(-z));
+const ORDER = ['logreg', 'ebm', 'xgb', 'forest', 'tree', 'mlp', 'svm'];
+const COLOR = {logreg: '--s1', ebm: '--s3', xgb: '--s2', forest: '--s5', tree: '--s7', mlp: '--s4', svm: '--s6'};
+const EXPL = {logreg: [5, 'Glass box'], ebm: [5, 'Glass box'], tree: [4, 'Readable'], xgb: [3, 'With SHAP'], forest: [2, 'With SHAP'], mlp: [1, 'Black box'], svm: [1, 'Black box']};
+const FEAT = D.features.map(f => f.f);
+const FL = Object.fromEntries(D.features.map(f => [f.f, f]));
+
+/* ---------------- routing ---------------- */
+const VIEWS = ['architecture', 'algorithms', 'lab', 'scorer', 'segments', 'verdict'];
+function route() {
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'architecture';
+  VIEWS.forEach(n => { $('#v-' + n).hidden = n !== v; });
+  document.querySelectorAll('nav.tabs a').forEach(a => { if (a.getAttribute('href') === '#' + v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (v === 'segments') drawPCA();
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', route);
+
+/* ---------------- architecture ---------------- */
+const LAYERS = [
+  ['L0', 'Tenant config', 'One YAML per client', 'conf/customers/betting/*.yml defines each client: paybills, labels, output tables. Onboarding a partner is config, not code. Aventus or M-KOPA would be one more file.'],
+  ['L1', 'Ingest pipeline', 'MLRun / Kubeflow on Iguazio', 'Slices raw M-PESA transactions per client (e.g. SportyBet paybill 590555), joins the shared gaming tier (505M+ subscribers), computes market share. Runs weekly and monthly.'],
+  ['L2', 'Doris featurestore', '643M daily rows', 'Apache Doris holds the finished tables: date, hashed subscriber, county/ward, gender, device, tx count/value, income proxy. This is where credit features would be pre-computed daily.'],
+  ['L3–L5', 'Superset · OpenMetadata · Chat', 'Charts, definitions, Text-to-SQL', 'Superset serves governed chart data with row-level security; OpenMetadata holds the single definition of every metric; the Conversational Intelligence backend answers questions in plain language.'],
+  ['AI', 'Intelligence layer (PI-1…4)', 'Empty today: this work', 'PI-1 Credit decisions (this prototype) · PI-2 Segmentation & white space · PI-3 Campaign/sponsorship lift · PI-4 Churn. A stateless FastAPI service next to Doris, deployable as an MLRun application, same pattern as the chat backend.', true],
+  ['L6', 'Zuri API', 'Next.js', 'One route per capability. A new /api/intelligence/score route would call the credit service and cache nothing (decisions are per request).'],
+  ['L7', 'Zuri UI', 'React · Recharts · deck.gl', 'Dashboards and maps today. Adds: a decision console for lenders, segment maps for betting partners.'],
+];
+function renderStack(sel = 4) {
+  const s = $('#stack'); s.innerHTML = '';
+  LAYERS.forEach((L, i) => {
+    const b = el('button', {class: 'layer' + (L[4] ? ' intel' : ''), 'aria-pressed': String(i === sel)},
+      `<span class="tag">${L[0]}</span><span><b>${L[1]}</b><small>${L[2]}</small></span>${L[4] ? '<span class="chip info">New</span>' : '<span class="chip neutral">Live</span>'}`);
+    b.onclick = () => renderStack(i); s.append(b);
+  });
+  const L = LAYERS[sel];
+  $('#layerDetail').innerHTML = `<span class="eyebrow">${L[0]}</span><h2 style="margin:4px 0 10px">${L[1]}</h2><p>${L[3]}</p>` +
+    (L[4] ? `<div class="grid2" style="margin-top:16px">${[['PI-1', 'Should we lend?', 'Probability of default + reasons, <100 ms'], ['PI-2', 'Who and where?', 'Segments per ward / H3 cell'], ['PI-3', 'Did the campaign work?', 'Incremental users from a sponsorship'], ['PI-4', 'Who is leaving?', 'Churn probability per segment']].map(x => `<div class="step"><span class="n">${x[0]}</span><b>${x[1]}</b><span class="muted small">${x[2]}</span></div>`).join('')}</div>` : '');
+}
+const FLOW = [
+  ['Lender app', 'Wanjiku taps "Borrow KES 5,000" in the LendPlus app.', '0 ms'],
+  ['Zuri API', 'POST /score with a consented customer reference. Authenticated per partner.', '~5 ms'],
+  ['Feature lookup', 'Pre-computed features read from Doris: inflow regularity, SIM age, repayment history, region tier.', '~20–40 ms'],
+  ['Model', 'Champion model returns a probability of default, plus per-feature contributions.', '~1–10 ms'],
+  ['Decision + reasons', 'Business rule turns the probability into Approve / Starter loan / Decline, with top 3 reasons.', '~1 ms'],
+];
+let flowAt = 0;
+function renderFlow() {
+  $('#flow').innerHTML = FLOW.map((f, i) => `<div class="step${i <= flowAt ? ' on' : ''}"><span class="n">${i + 1} · ${f[2]}</span><b>${f[0]}</b><span class="small muted">${f[1]}</span></div>`).join('');
+}
+$('#flowNext').onclick = () => { flowAt = Math.min(FLOW.length - 1, flowAt + 1); renderFlow(); };
+$('#flowPrev').onclick = () => { flowAt = Math.max(0, flowAt - 1); renderFlow(); };
+$('#qtable').innerHTML = [
+  ['Should I lend to this person? <span class="muted">(Aventus, M-KOPA)</span>', 'Prediction (yes/no)', 'Logistic → EBM / XGBoost', 'Probability of default + reasons'],
+  ['Who should I target, and where? <span class="muted">(Betika, SportyBet)</span>', 'Discovery (no label)', 'K-means / GMM on aggregates', 'Segments per ward with size and value'],
+  ['Will this customer leave?', 'Prediction', 'Same models as credit', 'Churn probability per segment'],
+  ['Was the KES 380M jersey deal worth it?', 'Measurement (causal)', 'Geo-lift / difference-in-differences', 'Incremental users and revenue'],
+].map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+
+/* ---------------- algorithms ---------------- */
+const GLOSS = [
+  ['n', 'Number of people (rows) in the data. Here n = ' + fmt(D.meta.rows) + '.'],
+  ['p', 'Number of features (columns) per person. Here p = ' + FEAT.length + '.'],
+  ['xᵢⱼ', 'Value of feature j for person i. i picks the row, j picks the column.'],
+  ['yᵢ', 'The label: 1 = defaulted, 0 = repaid.'],
+  ['β, w', 'Weights: how hard each feature pushes the answer. Training turns these knobs.'],
+  ['Loss', 'The fine for one wrong prediction. Bigger miss, bigger fine.'],
+  ['Objective', 'What training minimises: total fines + a fee for complexity.'],
+  ['Regularization', 'That complexity fee (λ). Stops the model memorising noise; like docking marks for over-complicated answers.'],
+];
+$('#glossary').innerHTML = GLOSS.map(g => `<div class="gl"><b>${g[0]}</b><p>${g[1]}</p></div>`).join('');
+
+const ALGOS = [
+  {k: 'linreg', name: 'Linear regression', fam: 'Predicts an amount', verdict: ['bad', 'Wrong tool for yes/no'],
+   one: 'Fits a straight line. Good for "how much will this segment spend next month", wrong for "will she repay".',
+   f: 'ŷ<sub>i</sub> = β<sub>0</sub> + β<sub>1</sub>x<sub>i1</sub> + … + β<sub>p</sub>x<sub>ip</sub> &nbsp;&nbsp; minimise &nbsp; MSE = (1/n) Σ<sub>i</sub> (y<sub>i</sub> − ŷ<sub>i</sub>)²',
+   sym: [['ŷᵢ', 'prediction for person i'], ['β₀', 'starting value when every feature is 0'], ['βⱼ', 'change in ŷ when feature j rises by 1'], ['yᵢ − ŷᵢ', 'residual: the miss'], ['MSE', 'average squared miss: squaring stops misses cancelling and punishes big ones']],
+   an: 'Laying a ruler through a cloud of dots so the total squared distance is smallest.',
+   pros: ['Fully transparent', 'Instant to train and score', 'Right for revenue and spend forecasts'],
+   cons: ['Output is unbounded: can say "−20% chance of default"', 'Assumes straight-line effects'],
+   use: 'Revenue forecasting per segment; never the credit decision.'},
+  {k: 'logreg', name: 'Logistic regression', fam: 'Scorecard · baseline', verdict: ['info', 'Mandatory baseline'],
+   one: 'The same weighted sum, squashed into a probability between 0 and 1. The bank scorecard.',
+   f: 'z<sub>i</sub> = β<sub>0</sub> + Σ<sub>j</sub> β<sub>j</sub>x<sub>ij</sub> &nbsp;&nbsp; p<sub>i</sub> = 1 / (1 + e<sup>−z<sub>i</sub></sup>) <br><br> minimise &nbsp; −(1/n) Σ<sub>i</sub> [ y<sub>i</sub> log p<sub>i</sub> + (1−y<sub>i</sub>) log(1−p<sub>i</sub>) ] + λ Σ<sub>j</sub> β<sub>j</sub>²',
+   sym: [['zᵢ', 'total risk points (log-odds), any number'], ['e', '≈ 2.718; the sigmoid turns z into 0–1'], ['pᵢ', 'probability person i defaults'], ['e^βⱼ', 'odds ratio: β = 0.7 means each unit doubles the odds'], ['log-loss', 'punishes confident wrong answers hardest'], ['λΣβ²', 'L2 regularization: no single weight may dominate']],
+   an: 'A points-based driving test: each answer adds or removes points, pass if under the line.',
+   pros: ['Every weight is a sentence a regulator accepts', 'Well-calibrated probabilities', 'Microsecond scoring'],
+   cons: ['Misses interactions unless built by hand', 'Straight-line effects on the log-odds'],
+   use: 'Almost every bank application scorecard. Our fallback model.', widget: 'sigmoid'},
+  {k: 'tree', name: 'Decision tree', fam: 'Flowchart', verdict: ['neutral', 'Building block'],
+   one: 'Asks the yes/no question that best separates payers from defaulters, then repeats inside each group.',
+   f: 'Gini impurity &nbsp; G = 1 − Σ<sub>k</sub> p<sub>k</sub>² &nbsp;&nbsp; pick the split with the biggest drop in G',
+   sym: [['pₖ', 'share of class k (payer or defaulter) in a group'], ['G = 0', 'pure group: everyone the same'], ['G = 0.5', '50/50 mix: worst case for two classes']],
+   an: 'The game "20 questions".',
+   pros: ['Readable as a flowchart', 'Finds interactions by itself'],
+   cons: ['Unstable: a few rows change the whole tree', 'Coarse, step-shaped probabilities'],
+   use: 'The unit that forests and boosting are made of.'},
+  {k: 'forest', name: 'Random forest', fam: 'Bagging', verdict: ['neutral', 'Sanity check'],
+   one: 'Hundreds of trees, each trained on a random resample of people and features. Average their votes.',
+   f: 'p̂(x) = (1/B) Σ<sub>b=1..B</sub> tree<sub>b</sub>(x)',
+   sym: [['B', 'number of trees (300 here)'], ['tree_b', 'one tree trained on a bootstrap sample (rows drawn with replacement)'], ['bagging', 'Bootstrap AGGregatING: noise in independent opinions cancels out']],
+   an: 'Ask 300 loan officers who each saw different past files, and average their opinions.',
+   pros: ['Robust, hard to overfit', 'Few settings'],
+   cons: ['Usually beaten by boosting', 'Big model; needs SHAP to explain'],
+   use: 'A strong second opinion in model reviews.'},
+  {k: 'xgb', name: 'XGBoost', fam: 'Boosting', verdict: ['ok', 'Accuracy candidate'],
+   one: 'Trees built in sequence; each new tree fixes the errors left by all the previous ones.',
+   f: 'F<sub>M</sub>(x) = F<sub>0</sub> + η Σ<sub>m=1..M</sub> f<sub>m</sub>(x) <br><br> Obj = Σ<sub>i</sub> ℓ(y<sub>i</sub>, ŷ<sub>i</sub>) + Σ<sub>m</sub> [ γT + ½λ Σ<sub>j</sub> w<sub>j</sub>² ] &nbsp;&nbsp; best leaf w* = −G / (H + λ)',
+   sym: [['F₀', 'starting guess: the overall default rate'], ['fₘ', 'the m-th small tree'], ['η', 'learning rate: how much to trust each new tree (0.05 here)'], ['M', 'number of trees (500 here)'], ['T, γ', 'number of leaves, and the fee per leaf'], ['wⱼ, λ', 'a leaf\'s output, and the penalty on large outputs'], ['G, H', 'sum of errors (gradients) and of certainty (p(1−p)) in a leaf']],
+   an: 'A relay of tutors: each one only studies the questions the class still gets wrong.',
+   pros: ['Top accuracy on tabular data', 'Handles missing values and interactions', 'Monotonic constraints: "more late payments never lowers risk"'],
+   cons: ['Black box without SHAP', 'Many settings to tune', 'Overfits if not validated properly'],
+   use: 'Fraud and credit at fintechs; winning Home Credit solutions were boosting ensembles.'},
+  {k: 'ebm', name: 'EBM (Explainable Boosting)', fam: 'Glass-box boosting', verdict: ['ok', 'Likely champion'],
+   one: 'Logistic regression where each straight-line weight becomes a curve learned by boosting. Exact reasons, near-boosting accuracy.',
+   f: 'logit(p) = β<sub>0</sub> + Σ<sub>j</sub> f<sub>j</sub>(x<sub>j</sub>) &nbsp; [ + a few pairwise f<sub>ij</sub>(x<sub>i</sub>, x<sub>j</sub>) ]',
+   sym: [['logit(p)', 'log-odds, same link as logistic regression'], ['fⱼ(xⱼ)', 'a learned curve for feature j alone: plot it and read it'], ['fᵢⱼ', 'optional pairwise interactions (switched off here, to stay fully readable)']],
+   an: 'The same points-based test, but each question\'s points table was drawn from millions of past drivers.',
+   pros: ['Exact per-person reasons: no approximation', 'Curves can be reviewed and edited by the risk team', 'Fast to score'],
+   cons: ['Slower to train than XGBoost', 'Limited to pairwise interactions'],
+   use: 'Microsoft InterpretML; used where decisions must be justified (finance, health).'},
+  {k: 'svm', name: 'Support vector machine', fam: 'Hyperplane', verdict: ['bad', 'Not for this problem'],
+   one: 'Draws the boundary between payers and defaulters with the widest possible empty corridor.',
+   f: 'boundary &nbsp; w·x + b = 0 &nbsp;&nbsp; minimise &nbsp; ½‖w‖² + C Σ<sub>i</sub> max(0, 1 − y<sub>i</sub>(w·x<sub>i</sub> + b))',
+   sym: [['w, b', 'direction and position of the boundary'], ['2/‖w‖', 'corridor width: small ‖w‖ = wide corridor'], ['C', 'fine for points on the wrong side'], ['max(0, …)', 'hinge loss: zero if comfortably correct'], ['yᵢ', 'here coded −1 / +1']],
+   an: 'Building the widest road between two villages; houses on the road get fined.',
+   pros: ['Elegant on small, clean data'],
+   cons: ['No probabilities without extra calibration', 'Kernel version scales badly (n² to n³)', 'Hard to explain'],
+   use: 'Text and image tasks before deep learning. Shown here to prove it was considered.'},
+  {k: 'mlp', name: 'Neural network', fam: 'Deep learning', verdict: ['warn', 'Later, on sequences'],
+   one: 'Layers of small logistic units. Powerful on images, text and long sequences; rarely the best on one row per person.',
+   f: 'h = σ(W<sub>1</sub>x + b<sub>1</sub>) &nbsp;&nbsp; p = σ(W<sub>2</sub>h + b<sub>2</sub>) &nbsp;&nbsp; trained by back-propagation on log-loss',
+   sym: [['W, b', 'weight matrices and offsets for each layer'], ['h', 'hidden layer: learned intermediate features'], ['σ', 'squashing function']],
+   an: 'A committee of committees: each layer summarises the one before.',
+   pros: ['Learns patterns from raw M-PESA transaction sequences', 'Can feed learned features into boosting'],
+   cons: ['On tabular rows, usually no better than boosting', 'Black box, more tuning, more compute'],
+   use: 'Phase 3: sequence models on raw transaction histories.'},
+  {k: 'kmeans', name: 'K-means and GMM', fam: 'Unsupervised', verdict: ['info', 'For segmentation'],
+   one: 'No label. Finds K groups of similar customers for marketing: acquisition, retention, white space.',
+   f: 'K-means: minimise Σ<sub>k</sub> Σ<sub>x∈C<sub>k</sub></sub> ‖x − μ<sub>k</sub>‖² <br><br> GMM: p(x) = Σ<sub>k</sub> π<sub>k</sub> N(x | μ<sub>k</sub>, Σ<sub>k</sub>)',
+   sym: [['K', 'number of groups (you choose; see Segments tab)'], ['μₖ', 'centre of group k'], ['Cₖ', 'members of group k'], ['πₖ', 'share of customers in group k (GMM)'], ['Σₖ', 'shape and spread of group k (GMM)']],
+   an: 'Placing K shops so every customer is close to one. GMM allows "70% hustler, 30% salaried".',
+   pros: ['Fast on millions of rows (K-means)', 'Soft, oval groups (GMM)', 'PCA first removes noise'],
+   cons: ['Must pick K', 'Groups need human naming', 'Must run on aggregates for privacy'],
+   use: 'Ward-level targeting for betting and lending partners.'},
+];
+let algoSel = 'ebm';
+function renderAlgos() {
+  $('#alist').innerHTML = '';
+  ALGOS.forEach(a => {
+    const b = el('button', {'aria-pressed': String(a.k === algoSel)}, `<span><b>${a.name}</b><span class="fam">${a.fam}</span></span><span class="chip ${a.verdict[0]}">${a.verdict[1]}</span>`);
+    b.onclick = () => { algoSel = a.k; renderAlgos(); }; $('#alist').append(b);
+  });
+  const a = ALGOS.find(x => x.k === algoSel), m = D.models[a.k];
+  const measured = m ? `<div class="grid4" style="margin-top:4px">${[['AUC', m.auc.toFixed(3)], ['Gini', (2 * m.auc - 1).toFixed(3)], ['Brier', m.brier.toFixed(4)], ['Train time', m.train_s + ' s']].map(s => `<div class="stat"><span class="k">${s[0]}</span><span class="v">${s[1]}</span></div>`).join('')}</div><p class="muted small">Measured on ${fmt(D.meta.test)} held-out loans. <a href="#lab">Compare in the Model lab</a></p>` : `<p class="muted small">No probability of default to measure. ${a.k === 'kmeans' ? '<a href="#segments">See it on the data</a>' : 'Its output can\'t be a valid probability.'}</p>`;
+  $('#adetail').innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline"><h2>${a.name}</h2><span class="chip ${a.verdict[0]}">${a.verdict[1]}</span></div>
+    <p style="margin:8px 0 14px">${a.one}</p>
+    <div class="formula">${a.f}</div>
+    <dl class="kv" style="margin:14px 0">${a.sym.map(s => `<dt>${s[0]}</dt><dd>${s[1]}</dd>`).join('')}</dl>
+    <p class="note"><b>Analogy.</b> ${a.an}</p>
+    ${a.widget === 'sigmoid' ? sigmoidWidget() : ''}
+    <div class="proscons" style="margin:14px 0"><div><h4 style="color:var(--ok)">Strengths</h4><ul class="clean small">${a.pros.map(x => `<li>${x}</li>`).join('')}</ul></div><div><h4 style="color:var(--bad)">Limitations</h4><ul class="clean small">${a.cons.map(x => `<li>${x}</li>`).join('')}</ul></div></div>
+    <p class="small"><b>Used in the real world:</b> ${a.use}</p>
+    <div style="margin-top:14px;display:grid;gap:8px">${measured}</div>`;
+  if (a.widget === 'sigmoid') bindSigmoid();
+}
+function sigmoidWidget() {
+  return `<div style="margin-top:14px;display:grid;gap:8px"><label class="field">Drag the risk points z: <input type="range" id="zIn" min="-60" max="60" value="-21"></label><div id="sigPlot"></div></div>`;
+}
+function bindSigmoid() {
+  const draw = () => {
+    const z = $('#zIn').value / 10, W = 520, H = 150, P = 28;
+    const X = v => P + (v + 6) / 12 * (W - 2 * P), Y = v => H - P - v * (H - 2 * P);
+    let path = ''; for (let t = -6; t <= 6.001; t += .1) path += (path ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(sig(t)).toFixed(1);
+    $('#sigPlot').innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Sigmoid curve">
+      <line class="axis" x1="${P}" y1="${Y(0)}" x2="${W - P}" y2="${Y(0)}"/><line class="axis" x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(1)}"/>
+      <path d="${path}" fill="none" stroke="${css('--accent')}" stroke-width="2"/>
+      <circle cx="${X(z)}" cy="${Y(sig(z))}" r="5" fill="${css('--s2')}"/>
+      <text x="${P}" y="${H - 8}">z = −6</text><text x="${W - P - 30}" y="${H - 8}">z = +6</text><text x="${X(0) + 4}" y="${Y(1) + 10}">p = 1</text><text x="${X(0) + 4}" y="${Y(0) - 4}">p = 0</text>
+      <text x="${Math.min(X(z) + 8, W - 150)}" y="${Math.max(Y(sig(z)) - 8, 12)}" style="fill:${css('--fg')}">z = ${z.toFixed(1)} → p = ${pct(sig(z))}</text></svg>`;
+  };
+  $('#zIn').oninput = draw; draw();
+}
+
+/* ---------------- lab ---------------- */
+let labSel = 'ebm';
+const scale = 10000 / D.meta.test;
+const econ = () => { const L = +$('#inLoan').value || 5000; return {M: L * (+$('#inFee').value || 10) / 100, Lo: L * (+$('#inLgd').value || 80) / 100}; };
+const profitAt = (g, e) => (g.tn * e.M - g.fn * e.Lo) * scale;
+function pickCut(key, e) {
+  const G = D.models[key].grid;
+  if ($('#inMode').value === 'manual') return G[+$('#inCut').value];
+  return G.reduce((a, b) => profitAt(b, e) > profitAt(a, e) ? b : a);
+}
+function renderLab() {
+  const e = econ(), pStar = e.M / (e.M + e.Lo);
+  $('#manualRow').hidden = $('#inMode').value !== 'manual';
+  $('#cutLbl').textContent = pct(D.models.logreg.grid[+$('#inCut').value].c, 1);
+  const g0 = D.models.logreg.grid[0], goods = g0.tn + g0.fp, bads = g0.tp + g0.fn;
+  const allProfit = (goods * e.M - bads * e.Lo) * scale;
+  $('#breakeven').innerHTML = `Break-even cut-off from the money alone: approve when probability of default &lt; M ÷ (M + L) = ${fmt(e.M)} ÷ (${fmt(e.M)} + ${fmt(e.Lo)}) = <b class="mono">${pct(pStar)}</b>. A well-calibrated model's best cut-off lands close to this. Approving everyone earns <b class="mono">${kes(allProfit)}</b> per 10,000 applicants.`;
+  $('#labMeta').textContent = `Trained on ${fmt(D.meta.train)} loans, tested on ${fmt(D.meta.test)} loans the models never saw (${fmt(D.meta.test_defaults)} defaults, ${pct(D.meta.default_rate, 2)}). Change the loan economics and the ranking updates.`;
+  const rows = ORDER.map(k => { const g = pickCut(k, e); return {k, g, prof: profitAt(g, e)}; }).sort((a, b) => b.prof - a.prof);
+  $('#board').innerHTML = '';
+  rows.forEach((r, i) => {
+    const m = D.models[r.k], appr = (r.g.tn + r.g.fn) / D.meta.test, ex = EXPL[r.k];
+    const tr = el('tr', {class: r.k === labSel ? 'sel' : '', tabindex: '0'}, `<td><span class="legend"><span><i style="background:var(${COLOR[r.k]})"></i></span></span><b>${m.label}</b>${i === 0 ? ' <span class="chip ok">Most profit</span>' : ''}</td>
+      <td class="num">${m.auc.toFixed(3)}</td><td class="num">${(2 * m.auc - 1).toFixed(3)}</td><td class="num">${m.ks.toFixed(3)}</td><td class="num">${m.brier.toFixed(4)}</td>
+      <td class="num">${pct(r.g.c, 1)}</td><td class="num">${pct(appr)}</td><td class="num">${kes(r.prof)}</td><td class="num" style="color:var(${r.prof - allProfit >= 0 ? '--ok' : '--bad'})">${r.prof - allProfit >= 0 ? '+' : ''}${kes(r.prof - allProfit)}</td>
+      <td><span class="chip ${ex[0] >= 4 ? 'ok' : ex[0] >= 3 ? 'warn' : 'bad'}">${ex[1]}</span></td><td class="num">${m.latency_ms < 1 ? m.latency_ms.toFixed(2) : m.latency_ms.toFixed(1)} ms</td>`);
+    tr.onclick = () => { labSel = r.k; renderLab(); };
+    tr.onkeydown = ev => { if (ev.key === 'Enter') { labSel = r.k; renderLab(); } };
+    $('#board').append(tr);
+  });
+  const g = pickCut(labSel, e), m = D.models[labSel];
+  const c = v => fmt(v * scale);
+  $('#cmTitle').textContent = `${m.label}: outcomes per 10,000 applicants`;
+  $('#cm').innerHTML = `<div class="h"></div><div class="h">Model says decline</div><div class="h">Model says approve</div>
+    <div class="h">Actually defaults</div><div class="good"><b>${c(g.tp)}</b>Loss avoided</div><div class="loss"><b>${c(g.fn)}</b>Lent and lost · ${kes(g.fn * scale * e.Lo)}</div>
+    <div class="h">Actually repays</div><div class="miss"><b>${c(g.fp)}</b>Good customer turned away · ${kes(g.fp * scale * e.M)} margin missed</div><div class="good"><b>${c(g.tn)}</b>Earned ${kes(g.tn * scale * e.M)}</div>`;
+  const precision = g.tp / (g.tp + g.fp), recall = g.tp / (g.tp + g.fn);
+  $('#cmNote').innerHTML = `Cut-off ${pct(g.c, 1)}. Recall ${pct(recall)} (share of defaulters caught) · precision ${pct(precision)} (share of declines that were truly bad) · default rate among approved ${pct(g.fn / (g.fn + g.tn), 2)}. Accuracy would be ${pct((g.tp + g.tn) / D.meta.test)}, but "approve everyone" already scores ${pct(1 - D.meta.default_rate)}, which is why we don't rank by accuracy.`;
+  drawProfit(e); drawROC(); drawCal(); renderFair(g);
+}
+['#inLoan', '#inFee', '#inLgd', '#inMode', '#inCut'].forEach(s => $(s).addEventListener('input', () => { renderLab(); renderScorer(); }));
+
+function lineChart(host, series, {xMax = 1, yMin = 0, yMax = 1, xLab, yLab, xFmt = v => v, yFmt = v => v, diag = false, marks = []} = {}) {
+  const W = 560, H = 250, L = 64, R = 12, T = 12, B = 34;
+  const X = v => L + v / xMax * (W - L - R), Y = v => T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${yLab} against ${xLab}">`;
+  for (let i = 0; i <= 4; i++) { const yv = yMin + (yMax - yMin) * i / 4; s += `<line class="axis" x1="${L}" x2="${W - R}" y1="${Y(yv)}" y2="${Y(yv)}" stroke-opacity=".6"/><text x="${L - 6}" y="${Y(yv) + 3}" text-anchor="end">${yFmt(yv)}</text>`; }
+  for (let i = 0; i <= 4; i++) { const xv = xMax * i / 4; s += `<text x="${X(xv)}" y="${H - 16}" text-anchor="middle">${xFmt(xv)}</text>`; }
+  s += `<text x="${(L + W - R) / 2}" y="${H - 2}" text-anchor="middle">${xLab}</text>`;
+  if (diag) s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(xMax)}" y2="${Y(Math.min(yMax, xMax))}" stroke="${css('--muted')}" stroke-dasharray="4 4"/>`;
+  if (yMin < 0) s += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css('--muted')}"/>`;
+  marks.forEach(mk => { s += `<line x1="${X(mk.x)}" x2="${X(mk.x)}" y1="${T}" y2="${H - B}" stroke="${css('--muted')}" stroke-dasharray="2 3"/><text x="${X(mk.x) + 4}" y="${T + 10}">${mk.label}</text>`; });
+  series.forEach(se => {
+    const d = se.pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ',' + Y(Math.max(yMin, Math.min(yMax, p[1]))).toFixed(1)).join('');
+    s += `<path d="${d}" fill="none" stroke="${css(se.color)}" stroke-width="${se.hi ? 2.6 : 1.2}" stroke-opacity="${se.hi ? 1 : .45}"/>`;
+    if (se.dots) se.pts.forEach(p => { s += `<circle cx="${X(p[0])}" cy="${Y(Math.min(yMax, p[1]))}" r="${se.hi ? 3.5 : 2}" fill="${css(se.color)}" fill-opacity="${se.hi ? 1 : .45}"/>`; });
+    if (se.end) { const p = se.end; s += `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="5" fill="${css(se.color)}"/>`; }
+  });
+  host.innerHTML = s + '</svg>';
+}
+function drawProfit(e) {
+  let lo = Infinity, hi = -Infinity;
+  const series = ORDER.map(k => { const pts = D.models[k].grid.map(g => [g.c, profitAt(g, e) / 1e6]); pts.forEach(p => { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }); const best = pickCut(k, e); return {pts, color: COLOR[k], hi: k === labSel, end: k === labSel ? [best.c, profitAt(best, e) / 1e6] : null}; });
+  const pad = (hi - lo) * .08; const pStar = e.M / (e.M + e.Lo);
+  lineChart($('#profitChart'), series, {xMax: .4, yMin: Math.min(0, lo - pad), yMax: hi + pad, xLab: 'Cut-off: decline if probability of default ≥', yLab: 'Profit', xFmt: v => pct(v, 0), yFmt: v => 'KES ' + v.toFixed(1) + 'M', marks: pStar < .4 ? [{x: pStar, label: 'break-even ' + pct(pStar)}] : []});
+  $('#profitLegend').innerHTML = ORDER.map(k => `<span><i style="background:var(${COLOR[k]})"></i>${D.models[k].label}</span>`).join('');
+}
+function drawROC() { lineChart($('#rocChart'), ORDER.map(k => ({pts: D.models[k].roc, color: COLOR[k], hi: k === labSel})), {xLab: 'Good customers wrongly declined (false positive rate)', yLab: 'Defaulters caught', xFmt: v => pct(v, 0), yFmt: v => pct(v, 0), diag: true}); }
+function drawCal() {
+  const mx = Math.max(...ORDER.flatMap(k => D.models[k].calib.flat())) * 1.05;
+  lineChart($('#calChart'), ORDER.map(k => ({pts: D.models[k].calib, color: COLOR[k], hi: k === labSel, dots: true})), {xMax: mx, yMax: mx, xLab: 'Predicted default rate', yLab: 'Actual default rate', xFmt: v => pct(v, 0), yFmt: v => pct(v, 0), diag: true});
+}
+function renderFair(g) {
+  $('#fairModel').textContent = '· ' + D.models[labSel].label + ' at ' + pct(g.c, 1);
+  const label = k => ({'gender:F': 'Women', 'gender:M': 'Men'})[k] || 'Age ' + k.split(':')[1];
+  const keys = Object.keys(g.g).sort((a, b) => a.startsWith('gender') === b.startsWith('gender') ? a.localeCompare(b) : a.startsWith('gender') ? -1 : 1);
+  $('#fair').innerHTML = keys.map(k => { const [n, a, d] = g.g[k]; return `<tr><td>${label(k)}</td><td class="num">${fmt(n)}</td><td class="num">${pct(a / n)}</td><td class="num">${pct(d / Math.max(a, 1), 2)}</td></tr>`; }).join('');
+}
+
+/* ---------------- scorer ---------------- */
+const cur = {}; let reasonModel = 'ebm';
+function lrScore(x) {
+  const P = D.lr; let z = P.intercept; const contrib = {};
+  FEAT.forEach((f, i) => { const v = x[f] == null ? P.median[i] : x[f]; const c = P.coef[i] * (v - P.mean[i]) / P.scale[i]; contrib[f] = c; z += c; });
+  return {p: sig(z), contrib};
+}
+function ebmScore(x) {
+  let z = D.ebm.intercept; const contrib = {};
+  D.ebm.terms.forEach(t => { const v = x[t.f]; let idx; if (v == null) idx = 0; else { let lo = 0, hi = t.cuts.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (t.cuts[mid] <= v) lo = mid + 1; else hi = mid; } idx = lo + 1; } const c = t.scores[idx]; contrib[t.f] = c; z += c; });
+  return {p: sig(z), contrib};
+}
+function expect(n) { if (n.l !== undefined) return n.e = n.l; return n.e = (expect(n.y) * n.y.c + expect(n.n) * n.n.c) / (n.y.c + n.n.c); }
+D.xgb.trees.forEach(expect);
+function xgbScore(x) {
+  let z = D.xgb.base_margin; const contrib = Object.fromEntries(FEAT.map(f => [f, 0]));
+  D.xgb.trees.forEach(t => { let n = t; z += t.e; while (n.l === undefined) { const v = x[n.s]; const nx = v == null ? (n.m ? n.y : n.n) : (Math.fround(v) < Math.fround(n.t) ? n.y : n.n); contrib[n.s] += nx.e - n.e; n = nx; } });
+  FEAT.forEach(f => { z += contrib[f]; });
+  return {p: sig(z), contrib};
+}
+const SCORERS = {logreg: lrScore, ebm: ebmScore, xgb: xgbScore};
+function fmtFeat(f, v) {
+  if (v == null) return 'unknown';
+  if (['INCOME', 'LOAN_AMOUNT', 'ANNUITY'].includes(f)) return fmt(v);
+  if (['LATE_SHARE', 'UNDERPAY_SHARE', 'ANNUITY_INCOME', 'PAYMENT_RATE'].includes(f)) return pct(v, 1);
+  if (['BUREAU_SCORE_2', 'BUREAU_SCORE_3'].includes(f)) return v.toFixed(2);
+  if (f === 'REGION_RATING' || f === 'N_PAST_INSTALMENTS') return fmt(v);
+  return v.toFixed(1);
+}
+function rng(f) { const F = FL[f]; let lo = Math.min(F.p05, 0), hi = F.p95; if (f === 'REGION_RATING') { lo = 1; hi = 3; } if (f.startsWith('BUREAU')) { lo = 0; hi = 0.9; } if (f === 'LATE_SHARE' || f === 'UNDERPAY_SHARE') { lo = 0; hi = 1; } if (f === 'AGE') { lo = 20; hi = 70; } return [lo, Math.max(hi, lo + 1e-6)]; }
+function buildInputs() {
+  const host = $('#inputs'); host.innerHTML = '<h3 style="margin:8px 0 4px">Applicant</h3><p class="muted small">Left label: what the dataset calls it. Grey: the Safaricom signal it stands in for.</p>';
+  FEAT.forEach(f => {
+    const [lo, hi] = rng(f), F = FL[f];
+    const w = el('div', {class: 'feat'}, `<div class="row"><span>${F.label}</span><span id="val-${f}"></span></div><span class="sub">${F.safaricom}</span>
+      <input type="range" id="in-${f}" min="0" max="1000" aria-label="${F.label}"><label class="unk"><input type="checkbox" id="unk-${f}"> unknown (no data)</label>`);
+    host.append(w);
+    const r = w.querySelector('input[type=range]'), u = w.querySelector('input[type=checkbox]');
+    r.oninput = () => { cur[f] = lo + (hi - lo) * r.value / 1000; if (f === 'REGION_RATING') cur[f] = Math.round(cur[f]); u.checked = false; renderScorer(); };
+    u.onchange = () => { cur[f] = u.checked ? null : lo + (hi - lo) * r.value / 1000; renderScorer(); };
+  });
+}
+function setApplicant(x) {
+  FEAT.forEach(f => { cur[f] = x[f]; const [lo, hi] = rng(f); $('#in-' + f).value = x[f] == null ? 500 : Math.round(Math.max(0, Math.min(1, (x[f] - lo) / (hi - lo))) * 1000); $('#unk-' + f).checked = x[f] == null; });
+  renderScorer();
+}
+function decision(p, cut) {
+  if (p < cut * 0.8) return ['ok', 'Approve'];
+  if (p < cut * 1.25) return ['warn', 'Starter loan / review'];
+  return ['bad', 'Decline'];
+}
+function renderScorer() {
+  if (!Object.keys(cur).length) return;
+  FEAT.forEach(f => { $('#val-' + f).textContent = fmtFeat(f, cur[f]); });
+  const e = econ();
+  $('#pdcards').innerHTML = ['logreg', 'ebm', 'xgb'].map(k => {
+    const r = SCORERS[k](cur), cut = pickCut(k, e).c, d = decision(r.p, cut);
+    return `<div class="pdcard" style="border-color:var(${k === reasonModel ? '--accent' : '--line'})"><span class="small muted">${D.models[k].label}</span><span class="v">${pct(r.p)}</span><span class="small muted">probability of default · cut-off ${pct(cut, 1)}</span><span class="chip ${d[0]}">${d[1]}</span></div>`;
+  }).join('');
+  $('#reasonTabs').innerHTML = '';
+  [['ebm', 'EBM · exact'], ['logreg', 'Logistic · exact'], ['xgb', 'XGBoost · path attribution']].forEach(([k, l]) => {
+    const b = el('button', {class: 'btn', 'aria-pressed': String(k === reasonModel)}, l); b.onclick = () => { reasonModel = k; renderScorer(); }; $('#reasonTabs').append(b);
+  });
+  const r = SCORERS[reasonModel](cur);
+  const items = FEAT.map(f => [f, r.contrib[f]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  const mx = Math.max(.3, ...items.map(i => Math.abs(i[1])));
+  $('#reasonBars').innerHTML = items.slice(0, 8).map(([f, c]) => {
+    const w = Math.abs(c) / mx * 50, left = c >= 0 ? 50 : 50 - w;
+    return `<div class="bar"><span>${FL[f].label} <span class="muted">(${fmtFeat(f, cur[f])})</span></span><span class="track"><i style="left:${left}%;width:${w}%;background:var(${c >= 0 ? '--bad' : '--ok'})"></i><span class="mid"></span></span><span>${c >= 0 ? '+' : '−'}${Math.abs(c).toFixed(2)}</span></div>`;
+  }).join('');
+  const up = items.filter(i => i[1] > 0).slice(0, 3), down = items.filter(i => i[1] < 0).slice(0, 2);
+  const cut = pickCut(reasonModel, e).c, d = decision(r.p, cut);
+  $('#reasonText').innerHTML = `<p class="small"><b>What the customer and the regulator would read:</b> ${d[1]} at ${pct(r.p)} probability of default.
+    ${up.length ? 'Main reasons for concern: ' + up.map(i => `${FL[i[0]].label.toLowerCase()} (${fmtFeat(i[0], cur[i[0]])})`).join('; ') + '.' : ''}
+    ${down.length ? ' In her favour: ' + down.map(i => `${FL[i[0]].label.toLowerCase()} (${fmtFeat(i[0], cur[i[0]])})`).join('; ') + '.' : ''}</p>
+    <p class="muted small" style="margin-top:6px">Bars are contributions to the log-odds (risk points). ${reasonModel === 'xgb' ? 'XGBoost reasons here use path attribution, a fast approximation; production uses TreeSHAP.' : 'They add up exactly to the score: nothing is approximated.'}</p>`;
+}
+function buildPresets() {
+  D.presets.forEach((p, i) => {
+    const b = el('button', {class: 'btn', 'aria-pressed': String(i === 0)}, `${p.name} <span class="muted small">· actually ${p.actual ? 'defaulted' : 'repaid'}</span>`);
+    b.onclick = () => { document.querySelectorAll('#presets .btn').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); setApplicant(p.x); };
+    $('#presets').append(b);
+  });
+}
+
+/* ---------------- segments ---------------- */
+const SEGC = ['--s1', '--s2', '--s3', '--s4'];
+function segName(s, all) {
+  const med = k => all.map(x => x[k]).sort((a, b) => a - b)[1];
+  const parts = [];
+  parts.push(s.age < 38 ? 'Young' : s.age > 50 ? 'Older' : 'Mid-career');
+  parts.push(s.income > med('income') ? 'higher-income' : 'lower-income');
+  if (s.late > 0.15) parts.push('late repayers'); else if (s.region > 2.2) parts.push('weaker regions'); else if (s.payment_rate > 0.06) parts.push('short-term borrowers'); else parts.push('steady repayers');
+  return parts.join(', ');
+}
+function renderSegments() {
+  const S = D.segments, P = S.profiles;
+  $('#segcards').innerHTML = P.map(s => `<div class="seg"><b><span class="sw" style="background:var(${SEGC[s.id]})"></span>${segName(s, P)}</b>
+    <div class="kv small"><dt>size</dt><dd>${fmt(s.size)} (${pct(s.size / D.meta.test, 0)})</dd><dt>age</dt><dd>${s.age.toFixed(0)} yrs avg</dd><dt>income</dt><dd>${fmt(s.income)} median</dd><dt>late</dt><dd>${pct(s.late)} of instalments</dd><dt>default</dt><dd><span class="chip ${s.default > D.meta.default_rate * 1.2 ? 'bad' : s.default < D.meta.default_rate * .8 ? 'ok' : 'warn'}">${pct(s.default)}</span></dd></div></div>`).join('');
+  $('#pcaLegend').innerHTML = P.map(s => `<span><i style="background:var(${SEGC[s.id]})"></i>${segName(s, P)}</span>`).join('') + `<span>Axes explain ${pct(S.pca_var[0] + S.pca_var[1], 0)} of the variation</span>`;
+  const e0 = S.elbow[0][1];
+  const W = 560, H = 230, L = 48, R = 48, T = 14, B = 34;
+  const X = k => L + (k - 2) / 6 * (W - L - R), Y = v => T + (1 - v) * (H - T - B);
+  const sMax = Math.max(...S.silhouette.map(s => s[1])) * 1.2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Elbow and silhouette by K">`;
+  for (let k = 2; k <= 8; k++) s += `<text x="${X(k)}" y="${H - 16}" text-anchor="middle">K=${k}</text>`;
+  s += `<line class="axis" x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  s += `<path d="${S.elbow.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ',' + Y(p[1] / e0)).join('')}" fill="none" stroke="${css('--s1')}" stroke-width="2"/>`;
+  s += S.elbow.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1] / e0)}" r="3" fill="${css('--s1')}"/>`).join('');
+  s += `<path d="${S.silhouette.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ',' + Y(p[1] / sMax)).join('')}" fill="none" stroke="${css('--s2')}" stroke-width="2" stroke-dasharray="5 3"/>`;
+  s += S.silhouette.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1] / sMax)}" r="3" fill="${css('--s2')}"/>`).join('');
+  s += `<line x1="${X(4)}" x2="${X(4)}" y1="${T}" y2="${H - B}" stroke="${css('--muted')}" stroke-dasharray="2 3"/><text x="${X(4) + 4}" y="${T + 10}">chosen K = 4</text>`;
+  s += `<text x="${L}" y="${H - 2}" style="fill:${css('--s1')}">— inertia (relative)</text><text x="${W - R}" y="${H - 2}" text-anchor="end" style="fill:${css('--s2')}">- - silhouette</text></svg>`;
+  $('#elbow').innerHTML = s;
+}
+function drawPCA() {
+  const c = $('#pca'); if (!c || !c.offsetWidth) return;
+  const dpr = devicePixelRatio || 1, W = c.offsetWidth, H = c.offsetHeight; c.width = W * dpr; c.height = H * dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+  const pts = D.segments.points, xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const q = (a, f) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(f * (s.length - 1))]; };
+  const x0 = q(xs, .01), x1 = q(xs, .99), y0 = q(ys, .01), y1 = q(ys, .99), pad = 14;
+  const cols = SEGC.map(css);
+  pts.forEach(p => { const x = pad + (p[0] - x0) / (x1 - x0) * (W - 2 * pad), y = H - pad - (p[1] - y0) / (y1 - y0) * (H - 2 * pad); if (x < 0 || x > W || y < 0 || y > H) return; g.fillStyle = cols[p[2]]; g.globalAlpha = .55; g.beginPath(); g.arc(x, y, 2.4, 0, 7); g.fill(); });
+  g.globalAlpha = 1;
+}
+addEventListener('resize', () => { if (!$('#v-segments').hidden) drawPCA(); });
+function renderDiD() {
+  const [a, b, c, d] = ['#d1', '#d2', '#d3', '#d4'].map(s => +$(s).value || 0);
+  const exp = b - a, ctl = d - c, ctlRate = c ? (d / c) : 1, counterfactual = a * ctlRate, lift = b - counterfactual;
+  $('#did').innerHTML = [['Raw change in exposed wards', (exp >= 0 ? '+' : '') + fmt(exp) + ' / week', 'What a gut-feel report would claim'],
+    ['Would have happened anyway', '+' + fmt(counterfactual - a) + ' / week', `Exposed wards × comparison growth (${pct(ctlRate - 1)})`],
+    ['Incremental users from the deal', (lift >= 0 ? '+' : '') + fmt(lift) + ' / week', `≈ ${fmt(lift * 52)} a year. Divide KES 380M by this for cost per acquired customer.`]]
+    .map((s, i) => `<div class="stat panel"><span class="k">${s[0]}</span><span class="v" style="color:var(${i === 2 ? (lift >= 0 ? '--ok' : '--bad') : '--fg'})">${s[1]}</span><span class="d">${s[2]}</span></div>`).join('');
+}
+['#d1', '#d2', '#d3', '#d4'].forEach(s => $(s).addEventListener('input', renderDiD));
+
+/* ---------------- verdict ---------------- */
+function renderVerdict() {
+  const M = D.models;
+  $('#verdictLede').innerHTML = `On ${fmt(D.meta.test)} unseen loans: logistic regression AUC <b class="mono">${M.logreg.auc.toFixed(3)}</b>, EBM <b class="mono">${M.ebm.auc.toFixed(3)}</b>, XGBoost <b class="mono">${M.xgb.auc.toFixed(3)}</b>. The gap between the glass box and the black box is ${((M.xgb.auc - M.ebm.auc) * 100).toFixed(1)} AUC points, small enough that explainability can come at little cost.`;
+  $('#tiers').innerHTML = [
+    ['Tier 1 · ship first', 'Logistic scorecard', 'Baseline and regulatory fallback. Every weight is a sentence.', 'info', 'logreg'],
+    ['Tier 2 · likely champion', 'EBM', 'Boosting-level accuracy with exact, per-person reasons.', 'ok', 'ebm'],
+    ['Tier 3 · accuracy ceiling', 'XGBoost + monotonic + SHAP', 'Promote only if its extra profit over EBM is material.', 'warn', 'xgb'],
+  ].map(t => `<div class="panel" style="display:grid;gap:8px"><span class="chip ${t[3]}" style="justify-self:start">${t[0]}</span><h3>${t[1]}</h3><p class="small muted">${t[2]}</p><div class="grid2"><div class="stat"><span class="k">AUC</span><span class="v">${M[t[4]].auc.toFixed(3)}</span></div><div class="stat"><span class="k">Brier</span><span class="v">${M[t[4]].brier.toFixed(4)}</span></div></div></div>`).join('');
+}
+
+/* ---------------- boot ---------------- */
+renderStack(); renderFlow(); renderAlgos(); renderLab(); buildInputs(); buildPresets(); setApplicant(D.presets[0].x); renderSegments(); renderDiD(); renderVerdict(); route();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderLab(); renderSegments(); drawPCA(); renderAlgos(); });
+new MutationObserver(() => { renderLab(); renderSegments(); drawPCA(); renderAlgos(); }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+})();
+</script>

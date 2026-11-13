@@ -15,6 +15,13 @@ this runs in parallel and does not block it.
 - [x] Downloaded Home Credit `application_train` (307,511 × 123, default 8.07%) locally (git-ignored).
 - [x] Algorithm guide with formulas, symbols, analogies, verdicts: `docs/ALGORITHMS_EXPLAINED.md`.
 - [x] Meeting script: `docs/MEETING_BRIEF.md`.
+- [x] Interactive stakeholder page `ui/index.html` (+ generated `ui/demo_data.js`): architecture fit,
+      algorithm explainer with formulas, model lab (7 models ranked by profit, adjustable loan economics,
+      ROC, calibration, fairness), live applicant scorer (LR / EBM / XGBoost running in-browser with
+      reason codes), K-means segments, difference-in-differences calculator for sponsorship lift.
+- [x] `scripts/build_demo_data.py`: 15 features (incl. repayment history from 13M past instalments),
+      trains LR, tree, forest, XGBoost (monotonic), EBM, linear SVM, MLP on 80% and tests on 20%;
+      exports LR/EBM/XGB so the page scores live; asserts the exported scorers match the libraries.
 
 ## Waiting on Joshua (green light)
 - [ ] **Approve dataset** (Home Credit) or pick an alternative.
