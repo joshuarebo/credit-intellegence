@@ -254,7 +254,7 @@ ul.clean{margin:0;padding-left:18px;display:grid;gap:4px}
   </div>
   <div class="panel">
     <h3>Fairness check at this cut-off <span class="muted small" id="fairModel"></span></h3>
-    <p class="muted small" style="margin-bottom:10px">Gender and age are never model inputs. We still check whether approvals and outcomes differ across groups.</p>
+    <p class="muted small" style="margin-bottom:10px">Gender is never a model input. Age is one, as in most scorecards, so we watch it closely. Same question for every group: are approvals fair, and do approved people in each group repay equally well?</p>
     <div class="scroll"><table><thead><tr><th>Group</th><th class="num">Applicants (test)</th><th class="num">Approval rate</th><th class="num">Default rate among approved</th></tr></thead><tbody id="fair" class="static"></tbody></table></div>
   </div>
 </section>
