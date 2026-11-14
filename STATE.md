@@ -51,7 +51,7 @@ this runs in parallel and does not block it.
   on Doris data. Weekly sync proposed: Thursdays 15:00, starting once access is granted.
 - 2026-11-14: Next step = request Doris + Iguazio access via manager (Eneth Kubai). Features come from
   the existing feature-engineering team; new features requested through them.
-- 2026-11-14: Product name is the **Decision API** (Marvin; echoes Jev, jevai.net). Jev, LLMs, JEPA assessed: not for the decision
+- 2026-11-14: Product name is the **Decision API** (Marvin; echoes Jev, jevai.net). Jev and LLMs assessed: not for the decision
   itself; possible later for features (sequence embeddings) and explanations. See `docs/STAKEHOLDER_CONTEXT.md`.
 - 2026-11-14: Prototype LR shows a sign flip on LOAN_AMOUNT (negative weight) and AVG_DAYS_LATE, caused
   by correlated features. Check Marvin's model for the same before it goes to a regulator.
