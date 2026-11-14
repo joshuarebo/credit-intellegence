@@ -46,6 +46,15 @@ this runs in parallel and does not block it.
 - 2026-11-13: Linear regression excluded for PD (unbounded output). Logistic = baseline.
 - 2026-11-13: Model selection metric = expected profit at cutoff p* = M/(M+L); AUC/KS for ranking.
 - 2026-11-13: Local MLflow until MLRun/Iguazio access is approved.
+- 2026-11-14: Marvin has already built a logistic-regression model (legal defensibility: every feature
+  has a visible weight). Our stance: his LR is the v1 production model; EBM/XGBoost run as challengers
+  on Doris data. Weekly sync proposed: Thursdays 15:00, starting once access is granted.
+- 2026-11-14: Next step = request Doris + Iguazio access via manager (Eneth Kubai). Features come from
+  the existing feature-engineering team; new features requested through them.
+- 2026-11-14: Product name is the **Decision API** (Marvin). LLMs / JEPA assessed: not for the decision
+  itself; possible later for features (sequence embeddings) and explanations. See `docs/STAKEHOLDER_CONTEXT.md`.
+- 2026-11-14: Prototype LR shows a sign flip on LOAN_AMOUNT (negative weight) and AVG_DAYS_LATE, caused
+  by correlated features. Check Marvin's model for the same before it goes to a regulator.
 
 ## Open questions
 - Target definition with business: 30 or 60 days past due?
