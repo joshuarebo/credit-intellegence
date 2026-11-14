@@ -1,491 +1,467 @@
 <title>Zuri Decision API</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: 7 chapters under a sticky bar. Plain words first; "For engineers" drawers hold the rest. Formulas are live: click a symbol, drag the applicant. */
+/* Layout: a workbook. Course outline down the left, one chapter at a time on the right.
+   Lessons are label-gutter rows (label left, content right), not stacked cards.
+   The one recurring object is the "decision slip": the receipt a lender gets back. */
 :root{
-  --bg:#f5f7f6; --surface:#ffffff; --sunk:#eaefed; --line:#d5ddda; --fg:#15201c; --muted:#5a6964;
-  --accent:#1d5fd1; --accent-soft:#e3ecfb; --accent-fg:#ffffff;
-  --ok:#17804f; --ok-soft:#dcf1e6; --warn:#a8630a; --warn-soft:#fbecd5; --bad:#c2372f; --bad-soft:#f9e0de;
-  --s1:#1d5fd1; --s2:#d07a12; --s3:#13897a; --s4:#a03f9a; --s5:#6b7a2a; --s6:#c2372f; --s7:#56636e;
-  --font-display:"Space Grotesk",system-ui,sans-serif; --font-body:"IBM Plex Sans",system-ui,sans-serif;
-  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace; --r:10px;
+  --paper:#f3f5f1; --surface:#ffffff; --sunk:#e8ece6; --line:#cfd6cd; --ink:#11211b; --muted:#566660;
+  --accent:#0d7446; --accent-soft:#dcefe3; --on-accent:#ffffff;
+  --sym:#2a45b0; --sym-soft:#e4e8f8;
+  --ok:#0d7446; --ok-soft:#dcefe3; --warn:#9a5d00; --warn-soft:#f8e9cc; --bad:#b3332b; --bad-soft:#f7dedb;
+  --c1:#2a45b0; --c2:#c26f0a; --c3:#0d7446; --c4:#8f3d92; --c5:#66752a; --c6:#b3332b; --c7:#56636e;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Public Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0f1513; --surface:#171f1c; --sunk:#1e2824; --line:#2c3a35; --fg:#e4ebe8; --muted:#97a6a0;
-  --accent:#6f9cf2; --accent-soft:#1c2a45; --accent-fg:#0b1220;
-  --ok:#4cc68a; --ok-soft:#163327; --warn:#e3a346; --warn-soft:#3a2b12; --bad:#f07b72; --bad-soft:#3d1c1a;
-  --s1:#6f9cf2; --s2:#e3a346; --s3:#3fc1ae; --s4:#d27bcc; --s5:#a9b95a; --s6:#f07b72; --s7:#9aa7b2; color-scheme:dark}}
+  --paper:#0f1613; --surface:#161f1b; --sunk:#1d2823; --line:#2e3b35; --ink:#e5ece8; --muted:#98a8a1;
+  --accent:#58c98d; --accent-soft:#17352a; --on-accent:#08130e;
+  --sym:#9db0ff; --sym-soft:#1f2747;
+  --ok:#58c98d; --ok-soft:#17352a; --warn:#e2a548; --warn-soft:#3a2c12; --bad:#ef7f76; --bad-soft:#3e1d1a;
+  --c1:#9db0ff; --c2:#e2a548; --c3:#58c98d; --c4:#d583d0; --c5:#adbd5e; --c6:#ef7f76; --c7:#9aa7b2; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0f1513; --surface:#171f1c; --sunk:#1e2824; --line:#2c3a35; --fg:#e4ebe8; --muted:#97a6a0;
-  --accent:#6f9cf2; --accent-soft:#1c2a45; --accent-fg:#0b1220;
-  --ok:#4cc68a; --ok-soft:#163327; --warn:#e3a346; --warn-soft:#3a2b12; --bad:#f07b72; --bad-soft:#3d1c1a;
-  --s1:#6f9cf2; --s2:#e3a346; --s3:#3fc1ae; --s4:#d27bcc; --s5:#a9b95a; --s6:#f07b72; --s7:#9aa7b2; color-scheme:dark}
+  --paper:#0f1613; --surface:#161f1b; --sunk:#1d2823; --line:#2e3b35; --ink:#e5ece8; --muted:#98a8a1;
+  --accent:#58c98d; --accent-soft:#17352a; --on-accent:#08130e;
+  --sym:#9db0ff; --sym-soft:#1f2747;
+  --ok:#58c98d; --ok-soft:#17352a; --warn:#e2a548; --warn-soft:#3a2c12; --bad:#ef7f76; --bad-soft:#3e1d1a;
+  --c1:#9db0ff; --c2:#e2a548; --c3:#58c98d; --c4:#d583d0; --c5:#adbd5e; --c6:#ef7f76; --c7:#9aa7b2; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15.5px;line-height:1.6}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
-h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
-h1{font-size:1.7rem;line-height:1.25}h2{font-size:1.3rem}h3{font-size:1.06rem}h4{font-size:.95rem}
-p{margin:0}
-.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
-.top .wrap{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
-.brand{display:flex;flex-direction:column;line-height:1.15}
-.brand b{font-family:var(--font-display);font-size:1.08rem}
-.brand span{font-size:.72rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
-nav.tabs{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
-nav.tabs a{padding:6px 12px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:500;font-size:.9rem;white-space:nowrap}
-nav.tabs a:hover{background:var(--sunk);color:var(--fg)}
-nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
-a{color:var(--accent)}
-a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-main{padding-block:26px 64px}
-section.view{display:grid;gap:20px}
-.lede{display:grid;gap:8px;max-width:74ch}
-.lede p{color:var(--muted);font-size:1.03rem}
-.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);font-weight:600}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;min-width:0;display:grid;gap:12px;align-content:start}
-.sub{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
-.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
-.grid-side{display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);gap:20px;align-items:start}
-.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-@media (max-width:900px){.grid2,.grid-side,.grid3{grid-template-columns:minmax(0,1fr)}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.muted{color:var(--muted)}.small{font-size:.87rem}.tiny{font-size:.78rem}
-.mono,.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.say{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0}
-.say::before{content:"Say it like this";display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600;margin-bottom:2px}
-.analogy{border-left:3px solid var(--s3);background:var(--sunk);padding:10px 14px;border-radius:0 8px 8px 0}
-.analogy::before{content:"Analogy";display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--s3);font-weight:600;margin-bottom:2px}
-.note{border-left:3px solid var(--warn);padding:8px 12px;background:var(--warn-soft);border-radius:0 6px 6px 0;font-size:.88rem}
-.hero{display:grid;gap:12px;padding:22px 24px;border-radius:var(--r);background:var(--accent-soft);border:1px solid var(--accent)}
-.hero .one{font-family:var(--font-display);font-size:1.3rem;line-height:1.35;text-wrap:balance}
-.stat{display:grid;gap:2px}
-.stat .k{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.stat .v{font-family:var(--font-mono);font-size:1.45rem;font-weight:500}
-.stat .d{font-size:.82rem;color:var(--muted)}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:.76rem;font-weight:600;white-space:nowrap}
-.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}
-.chip.bad{background:var(--bad-soft);color:var(--bad)}.chip.info{background:var(--accent-soft);color:var(--accent)}
-.chip.neutral{background:var(--sunk);color:var(--muted)}
-button.btn{font:inherit;font-size:.88rem;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;border-radius:8px;cursor:pointer}
-button.btn:hover{border-color:var(--accent)}
-button.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.62}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.015em;line-height:1.15}
+h1{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700}h2{font-size:1.5rem;font-weight:700}h3{font-size:1.1rem;font-weight:700}
+p{margin:0}a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--sym);outline-offset:2px}
+.shell{max-width:1220px;margin:0 auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* outline */
+.outline{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;display:grid;gap:18px}
+.brand b{font-family:var(--display);font-size:1.25rem;display:block;line-height:1.1}
+.brand span{font-size:.78rem;color:var(--muted)}
+.outline nav{display:grid;gap:2px}
+.outline a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:500;font-size:.93rem}
+.outline a:hover{background:var(--sunk);color:var(--ink)}
+.outline a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.outline a .dot{width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:.62rem;font-family:var(--mono)}
+.outline a.seen .dot{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.outline .hint{font-size:.78rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:16px;padding-block:0 56px}
+  .outline{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);padding-block:10px;gap:8px;border-bottom:1px solid var(--line)}
+  .outline nav{display:flex;overflow-x:auto;gap:4px}.outline a{white-space:nowrap;padding:6px 10px}.outline .hint,.brand span{display:none}
+}
+/* chapter */
+main{min-width:0}
+section.ch{display:grid;gap:26px}
+.kicker{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lede{display:grid;gap:10px;max-width:70ch}
+.lede p{font-size:1.08rem;color:var(--muted)}
+.muted{color:var(--muted)}.small{font-size:.88rem}.tiny{font-size:.78rem}.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px 28px;padding-top:22px;border-top:1px solid var(--line)}
+.row>.lab{font-family:var(--mono);font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.row>.lab b{display:block;color:var(--accent);font-weight:500}
+.row>.body{display:grid;gap:12px;min-width:0}
+.row>.body>p{max-width:68ch}
+@media (max-width:700px){.row{grid-template-columns:minmax(0,1fr)}}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.trygrid{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:800px){.cols2,.cols3,.trygrid{grid-template-columns:minmax(0,1fr)}}
+.say{background:var(--accent-soft);border-radius:10px;padding:12px 16px;max-width:68ch}
+.say::before{content:"Say it like this";display:block;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.picture{font-family:var(--display);font-size:1.2rem;line-height:1.35;max-width:36ch}
+.note{background:var(--warn-soft);border-radius:8px;padding:9px 13px;font-size:.88rem}
+.chip{display:inline-flex;align-items:center;padding:1px 9px;border-radius:999px;font-size:.74rem;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.bad{background:var(--bad-soft);color:var(--bad)}.chip.info{background:var(--sym-soft);color:var(--sym)}.chip.neutral{background:var(--sunk);color:var(--muted)}
+button.btn{font:inherit;font-size:.88rem;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 13px;border-radius:8px;cursor:pointer}
+button.btn:hover{border-color:var(--ink)}
+button.btn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.next{display:flex;justify-content:flex-end;padding-top:22px;border-top:1px solid var(--line)}
+.next a{font-family:var(--display);font-weight:700;font-size:1.05rem;text-decoration:none;background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:10px}
 .scroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:.87rem}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-size:.71rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
-th small{display:block;text-transform:none;letter-spacing:0;font-weight:400}
-td.num,th.num{text-align:right}
-tr.sel td{background:var(--accent-soft)}
-tbody.click tr{cursor:pointer}
-tbody.click tr:hover td{background:var(--sunk)}
-tr.total td{border-top:2px solid var(--fg);font-weight:600}
-svg text{fill:var(--muted);font-family:var(--font-mono);font-size:10px}
-svg .axis{stroke:var(--line)}
+th{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:500}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.total td{border-top:2px solid var(--ink);font-weight:600}
 label.field{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
-input[type=number],select{font:inherit;font-size:.9rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:100%}
+input[type=number]{font:inherit;font-size:.92rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);width:100%}
 input[type=range]{width:100%;accent-color:var(--accent)}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.88rem;margin:0}
-.kv dt{font-family:var(--font-mono);color:var(--accent)}
-.kv dd{margin:0}
 ul.clean{margin:0;padding-left:20px;display:grid;gap:5px}
-details.tech{border:1px dashed var(--line);border-radius:8px;padding:8px 12px;background:var(--bg)}
-details.tech>summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-details.tech[open]>summary{margin-bottom:10px}
-details.tech>div{display:grid;gap:10px}
-details.qa{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:12px 16px}
-details.qa>summary{cursor:pointer;font-weight:600;font-family:var(--font-display)}
-details.qa[open]>summary{margin-bottom:8px}
-details.qa>div{display:grid;gap:10px}
-.seq{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.step{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:4px;background:var(--surface);align-content:start}
-.step.on{border-color:var(--accent);background:var(--accent-soft)}
-.step .n{font-family:var(--font-mono);font-size:.74rem;color:var(--accent)}
-.stack{display:grid;gap:6px}
-.layer{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left;font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 12px;border-radius:8px;cursor:pointer}
-.layer .tag{font-family:var(--font-mono);font-size:.76rem;color:var(--muted)}
-.layer small{display:block;color:var(--muted);font-size:.8rem}
-.layer:hover{border-color:var(--accent)}
-.layer[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
-.layer.intel{background:var(--accent-soft);border-style:dashed;border-color:var(--accent)}
-/* models */
-.applicant{display:grid;gap:12px}
-.sliders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 22px}
-@media (max-width:900px){.sliders{grid-template-columns:minmax(0,1fr)}}
-.sl{display:grid;gap:2px;font-size:.83rem}
-.sl .row{display:flex;justify-content:space-between;gap:8px}
-.sl .row span:last-child{font-family:var(--font-mono)}
-.livechips{display:flex;gap:10px;flex-wrap:wrap}
-.livechip{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.84rem;background:var(--surface)}
-.livechip b{font-family:var(--font-mono)}
-.mlist{display:grid;gap:6px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px)}
-@media (max-width:900px){.mlist{position:static}}
-.mlist .grp{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:6px}
-.mlist button{font:inherit;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
-.mlist button:hover{border-color:var(--accent)}
-.mlist button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
-.fx{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--bg)}
-.fx .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
-.fx .eq{font-family:var(--font-mono);font-size:1.12rem;overflow-x:auto;white-space:nowrap;line-height:2.1}
-.fx .eq sub,.fx .eq sup{font-size:.68em}
-.fx .withnum{font-family:var(--font-mono);font-size:.9rem;color:var(--muted);overflow-x:auto;white-space:nowrap}
-.fx .withnum b{color:var(--fg)}
-button.sym{font:inherit;font-family:var(--font-mono);background:var(--accent-soft);color:var(--accent);border:1px solid transparent;border-radius:5px;padding:0 5px;cursor:pointer;line-height:1.5}
-button.sym:hover,button.sym[aria-pressed="true"]{border-color:var(--accent)}
-.symbox{display:grid;gap:4px;border-left:3px solid var(--accent);padding:6px 12px;background:var(--surface);border-radius:0 6px 6px 0;font-size:.88rem}
-.symbox .s{font-family:var(--font-mono);color:var(--accent);font-weight:500}
-.symbox .t{font-size:.8rem;color:var(--muted)}
-.howto{counter-reset:s;display:grid;gap:9px;margin:0;padding:0;list-style:none}
-.howto li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px}
-.howto li::before{content:counter(s);font-family:var(--font-mono);font-size:.8rem;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
-.proscons{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
-@media (max-width:600px){.proscons{grid-template-columns:minmax(0,1fr)}}
-.proscons h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.ladder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-@media (max-width:600px){.ladder{grid-template-columns:minmax(0,1fr)}}
-.rung{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:2px;background:var(--surface)}
-.rung .v{font-family:var(--font-mono);font-size:1.25rem}
-.tree{display:grid;gap:10px;justify-items:center}
-.tnode{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface);text-align:center;font-size:.84rem;max-width:260px}
-.tnode.q{background:var(--sunk)}
-.tnode.hit{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-.tbranch{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
-.tbranch>div{display:grid;gap:8px;justify-items:center;align-content:start}
-.tlabel{font-size:.72rem;color:var(--muted);font-family:var(--font-mono)}
-/* try */
-.feat{display:grid;gap:2px;padding:8px 0;border-bottom:1px solid var(--line)}
-.feat .row{display:flex;justify-content:space-between;gap:8px;font-size:.84rem;align-items:baseline}
-.feat .row span:last-child{font-family:var(--font-mono)}
-.feat .sub2{font-size:.74rem;color:var(--muted)}
-.feat .unk{font-size:.74rem;color:var(--muted);display:flex;gap:4px;align-items:center}
-.pdcard{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:6px;background:var(--surface)}
-.pdcard .v{font-family:var(--font-mono);font-size:1.8rem}
-.bars{display:grid;gap:6px}
-.bar{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:.82rem}
-.bar .track{position:relative;height:14px;background:var(--sunk);border-radius:3px}
-.bar .track i{position:absolute;top:0;bottom:0;border-radius:3px}
-.bar .track .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
-.bar span:last-child{font-family:var(--font-mono);text-align:right}
-.hbar{height:8px;background:var(--sunk);border-radius:4px;position:relative;min-width:60px}
-.hbar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent)}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
-.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:.84rem}
+ol.steps{counter-reset:s;display:grid;gap:10px;margin:0;padding:0;list-style:none;max-width:68ch}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px}
+ol.steps li::before{content:counter(s);font-family:var(--mono);font-size:.8rem;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);display:grid;place-items:center;margin-top:1px}
+details.deep{border:1px dashed var(--line);border-radius:10px;padding:10px 14px}
+details.deep>summary{cursor:pointer;font-weight:600;font-size:.92rem}
+details.deep[open]>summary{margin-bottom:12px}
+details.deep>div{display:grid;gap:12px}
+/* formula */
+.fx{display:grid;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.fx .eq{font-family:var(--mono);font-size:1.15rem;line-height:2.2;overflow-x:auto;white-space:nowrap}
+.fx .eq sup,.fx .eq sub{font-size:.66em}
+.fx .live{font-family:var(--mono);font-size:.9rem;color:var(--muted);overflow-x:auto;white-space:nowrap;border-top:1px dashed var(--line);padding-top:10px}
+.fx .live b{color:var(--ink)}
+.fx .words{font-size:.92rem}
+button.sym{font:inherit;font-family:var(--mono);background:var(--sym-soft);color:var(--sym);border:1px solid transparent;border-radius:5px;padding:0 6px;cursor:pointer;line-height:1.5}
+button.sym:hover{border-color:var(--sym)}
+table.legend td:first-child{font-family:var(--mono);color:var(--sym);white-space:nowrap}
+table.legend tr.hit td{background:var(--sym-soft)}
+table.legend td:last-child{font-family:var(--mono);font-size:.82rem;white-space:nowrap}
+/* slip: the receipt a lender gets back */
+.slip{font-family:var(--mono);font-size:.82rem;background:var(--surface);border:1.5px dashed var(--ink);border-radius:4px;padding:14px 16px;display:grid;gap:5px;max-width:340px;line-height:1.45;align-content:start}
+.slip .hd{display:flex;justify-content:space-between;gap:8px;letter-spacing:.06em;font-size:.7rem;color:var(--muted);border-bottom:1px dashed var(--line);padding-bottom:6px}
+.slip .ln{display:flex;justify-content:space-between;gap:12px}
+.slip .big{font-size:1.5rem;font-weight:500}
+.slip .why{border-top:1px dashed var(--line);padding-top:6px;display:grid;gap:2px;color:var(--muted);font-size:.76rem}
+.slip .dec{font-weight:500;padding:2px 8px;border-radius:3px;justify-self:start}
+.slip .dec.ok{background:var(--ok-soft);color:var(--ok)}.slip .dec.warn{background:var(--warn-soft);color:var(--warn)}.slip .dec.bad{background:var(--bad-soft);color:var(--bad)}
+/* lessons */
+.bench{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start;background:var(--sunk);border-radius:12px;padding:18px 20px}
+@media (max-width:800px){.bench{grid-template-columns:minmax(0,1fr)}}
+.sliders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px}
+@media (max-width:600px){.sliders{grid-template-columns:minmax(0,1fr)}}
+.sl{display:grid;gap:1px;font-size:.84rem}.sl .r{display:flex;justify-content:space-between;gap:8px}.sl .r span:last-child{font-family:var(--mono)}
+.picker{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.picker .g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.picker .g>span{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.lhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.pc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:600px){.pc{grid-template-columns:minmax(0,1fr)}}
+.pc h3{font-size:.8rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:6px}
+.quiz{display:grid;gap:8px;max-width:68ch}
+.quiz button{font:inherit;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 13px;cursor:pointer}
+.quiz button:hover{border-color:var(--ink)}
+.quiz button.right{background:var(--ok-soft);border-color:var(--ok)}.quiz button.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.rung{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:2px}
+.rung .v{font-family:var(--mono);font-size:1.25rem}
+.tree{display:grid;gap:10px;justify-items:center;max-width:620px}
+.tnode{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface);text-align:center;font-size:.84rem;max-width:250px}
+.tnode.q{background:var(--sunk)}.tnode.hit{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.tbranch{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}.tbranch>div{display:grid;gap:8px;justify-items:center;align-content:start}
+.tlabel{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.relay{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:.84rem}
+.relay span{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px}.relay i{color:var(--muted);font-style:normal}
+/* charts */
+svg text{fill:var(--muted);font-family:var(--mono);font-size:10px}svg .axis{stroke:var(--line)}
+.legendrow{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legendrow i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.pbars{display:grid;gap:4px}
+.pbar{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 92px minmax(0,150px);gap:12px;align-items:center;padding:7px 10px;border-radius:8px;border:1px solid transparent;background:none;font:inherit;color:var(--ink);text-align:left;cursor:pointer;width:100%}
+.pbar:hover{background:var(--sunk)}.pbar[aria-pressed="true"]{border-color:var(--ink);background:var(--surface)}
+.pbar .t{height:16px;background:var(--sunk);border-radius:3px;position:relative}.pbar .t i{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.pbar .v{font-family:var(--mono);text-align:right;font-size:.88rem}
+.pbar.static{cursor:default}.pbar.static:hover{background:none}
+@media (max-width:700px){.pbar{grid-template-columns:minmax(0,1fr) 92px}.pbar .t,.pbar .x{display:none}}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:.86rem;max-width:640px}
 .cm div{padding:10px;border-radius:6px;background:var(--sunk)}
-.cm .h{background:none;color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;padding:4px}
+.cm .h{background:none;color:var(--muted);font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;padding:4px}
 .cm .good{background:var(--ok-soft)}.cm .loss{background:var(--bad-soft)}.cm .miss{background:var(--warn-soft)}
-.cm b{display:block;font-family:var(--font-mono);font-size:1.1rem}
-pre.code{font-family:var(--font-mono);font-size:.8rem;background:var(--sunk);border-radius:8px;padding:12px;overflow-x:auto;margin:0;line-height:1.5}
-.seg{display:grid;gap:6px;border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--surface)}
-.seg .sw{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
-@media (prefers-reduced-motion:no-preference){.layer,.mlist button,button.btn,.step,button.sym{transition:border-color .15s,background .15s}}
+.cm b{display:block;font-family:var(--mono);font-size:1.15rem}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) 52px;gap:8px;align-items:center;font-size:.83rem}
+.bar .track{position:relative;height:14px;background:var(--sunk);border-radius:3px}.bar .track i{position:absolute;top:0;bottom:0;border-radius:3px}
+.bar .track .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}.bar span:last-child{font-family:var(--mono);text-align:right}
+.feat{display:grid;gap:1px;padding:7px 0;border-bottom:1px solid var(--line)}
+.feat .r{display:flex;justify-content:space-between;gap:8px;font-size:.84rem}.feat .r span:last-child{font-family:var(--mono)}
+.feat .s{font-size:.73rem;color:var(--muted)}
+.steps5{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+.st{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:3px;background:var(--surface);align-content:start}
+.st.on{border-color:var(--accent);background:var(--accent-soft)}
+.st .n{font-family:var(--mono);font-size:.72rem;color:var(--accent)}
+.stack{display:grid;gap:5px}
+.layer{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);padding:8px 12px;border-radius:8px;font-size:.9rem}
+.layer .tag{font-family:var(--mono);font-size:.74rem;color:var(--muted)}.layer small{display:block;color:var(--muted)}
+.layer.new{border:1.5px dashed var(--accent);background:var(--accent-soft)}
+pre.code{font-family:var(--mono);font-size:.8rem;background:var(--sunk);border-radius:8px;padding:12px;overflow-x:auto;margin:0;line-height:1.5}
+details.qa{border-top:1px solid var(--line);padding:14px 0}
+details.qa>summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:1.08rem}
+details.qa>div{display:grid;gap:10px;padding-top:8px;max-width:72ch}
+@media (prefers-reduced-motion:no-preference){button,.outline a,.st{transition:background .15s,border-color .15s,color .15s}}
 </style>
 
-<header class="top">
-  <div class="wrap">
-    <div class="brand"><b>Zuri Decision API</b><span>Lend or not, in milliseconds, with reasons</span></div>
-    <nav class="tabs" aria-label="Chapters">
-      <a href="#overview">Overview</a>
-      <a href="#data">Data</a>
-      <a href="#models">How the models think</a>
-      <a href="#results">Results</a>
-      <a href="#try">Try it</a>
-      <a href="#api">Decision API</a>
-      <a href="#qa">Q&amp;A</a>
-    </nav>
-  </div>
-</header>
+<div class="shell">
+<aside class="outline">
+  <div class="brand"><b>Zuri Decision API</b><span>A workbook: how we decide who to lend to</span></div>
+  <nav id="nav" aria-label="Chapters"></nav>
+  <p class="hint">Go top to bottom once. Each chapter ends with a button to the next.</p>
+</aside>
 
-<main class="wrap">
-
-<!-- ================= OVERVIEW ================= -->
-<section class="view" id="v-overview">
-  <div class="hero">
-    <span class="eyebrow">The idea in one line</span>
-    <p class="one">When someone asks for a loan, we predict the chance they won't pay it back, compare that with what the loan earns, and answer yes, a smaller loan, or no, with the reasons in plain words.</p>
-  </div>
-  <div class="panel">
-    <h3>How we think about it: five steps, in this order</h3>
-    <div class="seq">
-      <div class="step"><span class="n">1 · Decision</span><b>Lend or not, and how much?</b><span class="small muted">Start from the business question, not the algorithm.</span></div>
-      <div class="step"><span class="n">2 · Prediction</span><b>Chance she won't repay</b><span class="small muted">A percentage, not a yes/no, so the business chooses its own risk level.</span></div>
-      <div class="step"><span class="n">3 · Rule</span><b>Compare with the money</b><span class="small muted">If the expected loss beats the expected fee, decline or lend less.</span></div>
-      <div class="step"><span class="n">4 · Reasons</span><b>Explain every answer</b><span class="small muted">Feature by feature, weight by weight: enough to defend in court.</span></div>
-      <div class="step"><span class="n">5 · Learn</span><b>Watch and retrain</b><span class="small muted">Track who repaid; update when customers change.</span></div>
-    </div>
-    <p class="say">The model only does step 2. The Decision API is all five steps working together.</p>
-  </div>
-  <div class="grid2">
-    <div class="panel">
-      <h3>Where do we draw the line?</h3>
-      <p class="small">The two mistakes cost different amounts. Drag the numbers and watch the line move.</p>
-      <div class="grid3">
-        <label class="field">Loan (KES)<input type="number" id="oLoan" value="5000" step="500" min="500"></label>
-        <label class="field">Fee if repaid (%)<input type="number" id="oFee" value="10" min="1" max="60"></label>
-        <label class="field">Lost if not (%)<input type="number" id="oLoss" value="80" min="10" max="100" step="5"></label>
-      </div>
-      <div id="lineCalc"></div>
-    </div>
-    <div class="panel">
-      <h3>Where it sits in Zuri</h3>
-      <div class="stack" id="stack"></div>
-      <div id="layerDetail" class="small"></div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= DATA ================= -->
-<section class="view" id="v-data" hidden>
+<main>
+<!-- ============ START ============ -->
+<section class="ch" id="v-start">
   <div class="lede">
-    <span class="eyebrow">Data</span>
-    <h1>What the models learned from, and why each fact is there</h1>
-    <p>A "feature" is one fact about a person that helps predict whether they repay. Picking features is most of the real thinking. A clever model on bad features is still a bad model.</p>
+    <span class="kicker">Chapter 1 · Start here</span>
+    <h1>When someone asks for a loan, we predict the chance they won't repay, then let the money decide.</h1>
+    <p>The answer comes back in milliseconds as yes, a smaller loan, or no, with the reasons in plain words. That answer is the decision slip below. Everything in this workbook explains how one slip gets made.</p>
   </div>
-  <div class="grid2">
-    <div class="panel">
-      <h3>The practice data</h3>
-      <p class="small"><b>Home Credit</b> lends to people with little or no credit history, the same kind of customer as M-KOPA or Aventus. In 2018 it published anonymised loans for a public competition; we used a free public copy.</p>
-      <ul class="clean small">
-        <li><b id="dRows"></b> loan applications, each marked "repaid" or "had trouble repaying" (about <b id="dRate"></b> had trouble).</li>
-        <li><b>About 13 million past instalments</b>: what was due, when, and what was paid. This gives each person's repayment habits.</li>
-      </ul>
-      <p class="note">Not Kenyan, not M-PESA, no names. Amounts are in the dataset's own currency. It proves the method; on Safaricom data the features come from Doris, built by the feature-engineering team.</p>
-    </div>
-    <div class="panel">
-      <h3>How the 15 features were chosen</h3>
-      <ol class="howto small">
-        <li><span><b>Ask what a lender would ask</b>: can they afford it, do they pay on time, are they stable, what do others say?</span></li>
-        <li><span><b>Keep only facts Safaricom could supply</b> with consent.</span></li>
-        <li><span><b>Turn history into habits</b>: 13M payments become "how often late", "how late", "how often short".</span></li>
-        <li><span><b>Drop the unfair or invasive</b>: gender (kept only to test fairness), friends' defaults, mostly-blank home details.</span></li>
-        <li><span><b>Check direction</b>: more late payments must never <i>lower</i> risk.</span></li>
+  <div class="cols2" style="align-items:start">
+    <div style="display:grid;gap:12px">
+      <h3>Five steps, in this order</h3>
+      <ol class="steps">
+        <li><span><b>The decision.</b> Lend or not, and how much? We start from the business question, not from an algorithm.</span></li>
+        <li><span><b>The prediction.</b> A model gives one number: the chance she won't repay.</span></li>
+        <li><span><b>The line.</b> Compare that chance with what a loan earns and what a default costs.</span></li>
+        <li><span><b>The reasons.</b> Show which facts pushed the answer, feature by feature. Enough to defend in court.</span></li>
+        <li><span><b>The loop.</b> Watch who actually repays, and retrain when customers change.</span></li>
       </ol>
+      <p class="say">The model only does step 2. The Decision API is all five steps working together.</p>
     </div>
+    <div id="startSlip"></div>
   </div>
-  <div class="panel">
-    <h3>The 15 features</h3>
-    <div class="scroll"><table>
-      <thead><tr><th>Feature</th><th>Why it matters</th><th>Safaricom stand-in</th><th style="width:130px">How much it's used</th></tr></thead>
-      <tbody id="featTable"></tbody>
-    </table></div>
-  </div>
-</section>
-
-<!-- ================= MODELS ================= -->
-<section class="view" id="v-models" hidden>
-  <div class="lede">
-    <span class="eyebrow">How the models think</span>
-    <h1>One applicant, every model, every formula live</h1>
-    <p>Move Wanjiku's facts below and every formula, table and chart on this page recalculates. Click any <button class="sym" type="button" tabindex="-1">highlighted symbol</button> in a formula to see what it means.</p>
-  </div>
-  <div class="panel applicant">
-    <div class="btnrow" style="justify-content:space-between"><h3>Wanjiku <span class="muted small">29, two years in her job, asking for a loan</span></h3><button class="btn" id="resetW">Reset Wanjiku</button></div>
-    <div class="sliders" id="wSliders"></div>
-    <div class="livechips" id="liveChips"></div>
-  </div>
-  <div class="grid-side">
-    <div class="mlist" id="mlist"></div>
-    <div class="panel" id="mdetail"></div>
-  </div>
-</section>
-
-<!-- ================= RESULTS ================= -->
-<section class="view" id="v-results" hidden>
-  <div class="lede">
-    <span class="eyebrow">Results</span>
-    <h1>Seven models, same data, same test, ranked by money</h1>
-    <p id="labMeta"></p>
-  </div>
-  <div class="grid4" id="headline"></div>
-  <div class="panel">
-    <h3>Loan economics <span class="muted small">(change these and the ranking updates)</span></h3>
-    <div class="grid4">
-      <label class="field">Loan (KES)<input type="number" id="inLoan" value="5000" min="500" step="500"></label>
-      <label class="field">Fee if repaid (%)<input type="number" id="inFee" value="10" min="1" max="60" step="1"></label>
-      <label class="field">Lost if not repaid (%)<input type="number" id="inLgd" value="80" min="10" max="100" step="5"></label>
-      <label class="field">Line<select id="inMode"><option value="opt">Best line per model</option><option value="manual">Same line for all</option></select></label>
+  <div class="row"><div class="lab"><b>The line</b>where yes becomes no</div><div class="body">
+    <p>The two mistakes don't cost the same. Lend to someone who never pays and most of the loan is gone. Refuse someone who would have paid and only the fee is missed. Change the numbers:</p>
+    <div class="cols3" style="max-width:520px">
+      <label class="field">Loan (KES)<input type="number" class="econ" data-k="loan" id="e1loan" step="500" min="500"></label>
+      <label class="field">Fee if repaid (%)<input type="number" class="econ" data-k="fee" id="e1fee" min="1" max="60"></label>
+      <label class="field">Lost if not (%)<input type="number" class="econ" data-k="loss" id="e1loss" min="10" max="100" step="5"></label>
     </div>
-    <div id="manualRow" hidden><label class="field">Decline if risk ≥ <span class="mono" id="cutLbl"></span><input type="range" id="inCut" min="0" max="76" value="18"></label></div>
-  </div>
-  <div class="panel">
-    <h3>Leaderboard <span class="muted small">(click a row)</span></h3>
-    <div class="scroll"><table>
-      <thead><tr><th>Model</th><th class="num">Profit / 10,000 applicants</th><th class="num">vs approve-all</th><th class="num">Approves</th><th class="num">Bad loans<small>among approved</small></th><th class="num">Ranking score<small>AUC</small></th><th>Explains itself?</th></tr></thead>
-      <tbody id="board" class="click"></tbody>
-    </table></div>
-    <details class="tech"><summary>For engineers: all metrics</summary><div>
-      <div class="scroll"><table><thead><tr><th>Model</th><th class="num">AUC</th><th class="num">Gini</th><th class="num">KS</th><th class="num">PR-AUC</th><th class="num">Brier</th><th class="num">Log-loss</th><th class="num">Line</th><th class="num">Train</th></tr></thead><tbody id="boardTech"></tbody></table></div>
-      <p class="small muted"><b>AUC</b>: chance a random defaulter is scored riskier than a random payer (0.5 = coin flip). <b>Gini</b> = 2·AUC − 1. <b>KS</b>: largest gap between payers' and defaulters' score distributions. <b>Brier</b>: mean squared gap between predicted % and outcome. Evaluated on a stratified 20% holdout.</p>
-      <div id="rocChart"></div>
-    </div></details>
-  </div>
-  <div class="grid2">
-    <div class="panel"><h3 id="cmTitle"></h3><div class="cm" id="cm"></div><p class="small muted" id="cmNote"></p></div>
-    <div class="panel"><h3>Profit as the line moves</h3><div id="profitChart"></div><div class="legend" id="profitLegend"></div></div>
-  </div>
-  <div class="grid2">
-    <div class="panel"><h3>Can we trust its percentages?</h3><p class="small muted">Dots on the dashed line mean "it said 20%, and 20% really defaulted".</p><div id="calChart"></div></div>
-    <div class="panel"><h3>Fair across groups? <span class="muted small" id="fairModel"></span></h3><p class="small muted">Gender is never an input; age is, so we watch it.</p><div class="scroll"><table><thead><tr><th>Group</th><th class="num">People</th><th class="num">Approved</th><th class="num">Bad loans among approved</th></tr></thead><tbody id="fair"></tbody></table></div></div>
-  </div>
+    <div id="lineCalc"></div>
+  </div></div>
+  <div class="row"><div class="lab"><b>The plan</b>which model does step 2</div><div class="body">
+    <div class="cols3" id="plan"></div>
+    <p class="small muted">Tested on a public practice dataset first. The real test happens on Safaricom features in Doris.</p>
+  </div></div>
+  <div class="row"><div class="lab"><b>In Zuri</b>where this sits</div><div class="body">
+    <p>Zuri today shows partners what already happened. The architecture reserves an empty "Predictive Analytics" slot. The Decision API fills it.</p>
+    <div class="stack" style="max-width:560px">
+      <div class="layer"><span class="tag">L7–6</span><span><b>Zuri screens and API</b><small>React dashboards, Next.js</small></span><span class="chip neutral">Live</span></div>
+      <div class="layer new"><span class="tag">AI</span><span><b>Decision API</b><small>Should we lend? Later: who to target, did a campaign work, who's leaving</small></span><span class="chip ok">New</span></div>
+      <div class="layer"><span class="tag">L5–3</span><span><b>Chat, definitions, dashboards</b><small>Conversational Intelligence, OpenMetadata, Superset</small></span><span class="chip neutral">Live</span></div>
+      <div class="layer"><span class="tag">L2</span><span><b>Doris</b><small>Where the data and the feature team's tables live</small></span><span class="chip neutral">Live</span></div>
+      <div class="layer"><span class="tag">L1–0</span><span><b>Pipeline and partner settings</b><small>MLRun on Iguazio; one settings file per partner</small></span><span class="chip neutral">Live</span></div>
+    </div>
+  </div></div>
+  <div class="next"></div>
 </section>
 
-<!-- ================= TRY ================= -->
-<section class="view" id="v-try" hidden>
+<!-- ============ DATA ============ -->
+<section class="ch" id="v-data" hidden>
   <div class="lede">
-    <span class="eyebrow">Try it</span>
-    <h1>Real applicants the models never saw. Change anything.</h1>
-    <p>We know how each one actually turned out. Start with "Borderline": the simple model rejects someone who in fact repaid.</p>
+    <span class="kicker">Chapter 2 · The data</span>
+    <h1>A model is only as good as the facts it's given.</h1>
+    <p>A "feature" is one fact about a person that helps predict whether they repay. Choosing them is most of the real thinking.</p>
+  </div>
+  <div class="row"><div class="lab"><b>Source</b>practice data</div><div class="body">
+    <p><b>Home Credit</b> lends to people with little or no credit history, the same kind of customer as M-KOPA or Aventus. It published anonymised loans for a public competition in 2018. We used a free public copy: about 307,000 loan applications, each marked "repaid" or "had trouble repaying" (roughly 8 in 100 had trouble), plus about 13 million past instalment payments.</p>
+    <p class="note">Not Kenyan, not M-PESA, no names. It proves the method. On real work the features come from Doris, built by the feature-engineering team.</p>
+  </div></div>
+  <div class="row"><div class="lab"><b>Choosing</b>how features were picked</div><div class="body">
+    <ol class="steps">
+      <li><span><b>Ask what a lender would ask.</b> Can they afford it? Do they pay on time? Are they stable? What do others say?</span></li>
+      <li><span><b>Keep only what Safaricom could supply</b> with the customer's consent.</span></li>
+      <li><span><b>Turn history into habits.</b> 13 million payments become "how often late", "how late", "how often short".</span></li>
+      <li><span><b>Drop the unfair or invasive.</b> Gender is kept only to test fairness, never as an input.</span></li>
+      <li><span><b>Check direction.</b> More late payments must never lower risk.</span></li>
+    </ol>
+  </div></div>
+  <div class="row"><div class="lab"><b>The 15</b>grouped by the question they answer</div><div class="body">
+    <div class="scroll"><table><thead><tr><th>Feature</th><th>Why it matters</th><th>Safaricom stand-in</th></tr></thead><tbody id="featTable"></tbody></table></div>
+  </div></div>
+  <div class="next"></div>
+</section>
+
+<!-- ============ LESSONS ============ -->
+<section class="ch" id="v-models" hidden>
+  <div class="lede">
+    <span class="kicker">Chapter 3 · The models</span>
+    <h1>One applicant. Every model. Every formula, symbol by symbol.</h1>
+    <p>Each lesson has the same seven parts: what it is, a picture to hold in your head, the steps, the formula, Wanjiku's worked example, the verdict, and a question to check yourself. Move Wanjiku's facts and every lesson recalculates.</p>
+  </div>
+  <div class="bench">
+    <div style="display:grid;gap:12px">
+      <div class="btnrow" style="justify-content:space-between"><h3>Wanjiku, asking for a loan</h3><button class="btn" id="resetW">Reset</button></div>
+      <div class="sliders" id="wSliders"></div>
+      <p class="tiny muted">Her other facts stay fixed: 2 years on her phone line, instalment about 17% of income, an average region.</p>
+    </div>
+    <div id="benchSlip"></div>
+  </div>
+  <div class="picker" id="picker"></div>
+  <div id="lesson" style="display:grid;gap:22px"></div>
+  <div class="next"></div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section class="ch" id="v-results" hidden>
+  <div class="lede">
+    <span class="kicker">Chapter 4 · Results</span>
+    <h1>Seven models, one fair test, ranked by money.</h1>
+    <p id="resLede"></p>
+  </div>
+  <div class="row"><div class="lab"><b>Profit</b>per 10,000 applicants</div><div class="body">
+    <div class="cols3" style="max-width:520px">
+      <label class="field">Loan (KES)<input type="number" class="econ" data-k="loan" id="e2loan" step="500" min="500"></label>
+      <label class="field">Fee if repaid (%)<input type="number" class="econ" data-k="fee" id="e2fee" min="1" max="60"></label>
+      <label class="field">Lost if not (%)<input type="number" class="econ" data-k="loss" id="e2loss" min="10" max="100" step="5"></label>
+    </div>
+    <div class="pbars" id="pbars"></div>
+    <p class="say" id="resSay"></p>
+  </div></div>
+  <div class="row"><div class="lab"><b>10,000 people</b>what happens to them</div><div class="body">
+    <h3 id="cmTitle"></h3>
+    <div class="cm" id="cm"></div>
+    <p class="small muted" id="cmNote"></p>
+  </div></div>
+  <div class="row"><div class="lab"><b>Go deeper</b>open what you need</div><div class="body">
+    <details class="deep"><summary>Can we trust its percentages?</summary><div><p class="small muted">Each dot is a tenth of applicants. On the dashed line means "it said 20% and 20% really didn't repay".</p><div id="calChart" style="max-width:640px"></div><div class="legendrow" id="legA"></div></div></details>
+    <details class="deep"><summary>Is it fair across groups?</summary><div><p class="small muted">Gender is never an input. Age is, so we watch it. Shown for the model selected above.</p><div class="scroll"><table><thead><tr><th>Group</th><th class="n">People</th><th class="n">Approved</th><th class="n">Bad loans among approved</th></tr></thead><tbody id="fair"></tbody></table></div></div></details>
+    <details class="deep"><summary>Profit as the line moves</summary><div><div id="profitChart" style="max-width:640px"></div><div class="legendrow" id="legB"></div></div></details>
+    <details class="deep"><summary>For engineers: every metric</summary><div><div class="scroll"><table><thead><tr><th>Model</th><th class="n">AUC</th><th class="n">Gini</th><th class="n">KS</th><th class="n">PR-AUC</th><th class="n">Brier</th><th class="n">Line</th><th class="n">Train</th></tr></thead><tbody id="boardTech"></tbody></table></div><p class="small muted"><b>AUC</b>: chance a random defaulter is scored riskier than a random payer (0.5 is a coin flip). <b>Gini</b> = 2·AUC − 1. <b>KS</b>: biggest gap between payers' and defaulters' score distributions. <b>Brier</b>: average squared gap between predicted chance and outcome. Stratified 20% holdout.</p></div></details>
+  </div></div>
+  <div class="next"></div>
+</section>
+
+<!-- ============ TRY ============ -->
+<section class="ch" id="v-try" hidden>
+  <div class="lede">
+    <span class="kicker">Chapter 5 · Try it</span>
+    <h1>Real applicants the models never saw.</h1>
+    <p>We know how each one turned out. Start with "Borderline": the simple model says no to someone who in fact repaid. Then drag any fact and watch the slips change.</p>
   </div>
   <div class="btnrow" id="presets"></div>
-  <div class="grid-side" style="grid-template-columns:minmax(0,290px) minmax(0,1fr)">
-    <div class="panel" id="inputs"></div>
+  <div class="trygrid">
+    <div class="box" id="inputs"></div>
     <div style="display:grid;gap:20px;min-width:0">
-      <div class="grid3" id="pdcards"></div>
-      <div class="panel">
-        <h3>The reasons</h3>
+      <div class="auto" id="trySlips"></div>
+      <div class="box">
+        <h3>What pushed the decision</h3>
         <div class="btnrow" id="reasonTabs"></div>
-        <div class="legend"><span><i style="background:var(--bad)"></i>raises risk</span><span><i style="background:var(--ok)"></i>lowers risk</span></div>
+        <div class="legendrow"><span><i style="background:var(--bad)"></i>raises risk</span><span><i style="background:var(--ok)"></i>lowers risk</span></div>
         <div class="bars" id="reasonBars"></div>
-        <div id="reasonText"></div>
+        <p class="tiny muted" id="reasonNote"></p>
       </div>
     </div>
   </div>
+  <div class="next"></div>
 </section>
 
-<!-- ================= DECISION API ================= -->
-<section class="view" id="v-api" hidden>
+<!-- ============ SERVE ============ -->
+<section class="ch" id="v-serve" hidden>
   <div class="lede">
-    <span class="eyebrow">Decision API</span>
-    <h1>How it runs, how we roll it out, how we know it still works</h1>
-    <p>Two lanes. A slow lane builds and tests models in the background. A fast lane answers each loan request in milliseconds.</p>
+    <span class="kicker">Chapter 6 · Serving it</span>
+    <h1>From a trained model to an answer in under a tenth of a second.</h1>
+    <p>Two lanes. A slow lane builds and tests models in the background. A fast lane answers each loan request.</p>
   </div>
-  <div class="panel">
-    <h3>Fast lane: one loan request <span class="chip info">target under 100 ms</span></h3>
-    <div class="seq" id="serveLane"></div>
+  <div class="row"><div class="lab"><b>Fast lane</b>one loan request</div><div class="body">
+    <div class="steps5" id="serveLane"></div>
     <div class="btnrow"><button class="btn" id="servePrev">Back</button><button class="btn" id="serveNext">Next step</button><span class="small muted" id="serveTotal"></span></div>
-  </div>
-  <div class="grid2">
-    <div class="panel">
-      <h3>What the partner sends and gets back</h3>
-<pre class="code">POST /v1/decision
+    <div class="cols2">
+      <div><p class="small muted">The partner sends:</p><pre class="code">POST /v1/decision
 { "partner": "lendplus",
   "customer_ref": "hashed-msisdn",
   "consent_id": "c-2026-11-0042",
-  "amount_kes": 5000, "tenor_days": 30 }
-
-→ 200 OK
-{ "decision": "approve",
+  "amount_kes": 5000,
+  "tenor_days": 30 }</pre></div>
+      <div><p class="small muted">And gets back:</p><pre class="code">{ "decision": "approve",
   "risk": 0.072,
   "max_amount_kes": 5000,
   "reasons": ["Pays instalments on time",
               "Regular monthly inflows",
               "SIM held over 2 years"],
-  "model": "logreg-1.0.0",
-  "request_id": "r-9f3c…" }</pre>
+  "model": "logreg-1.0.0" }</pre></div>
     </div>
-    <div class="panel">
-      <h3>Slow lane: building a model</h3>
-      <ol class="howto small">
-        <li><span><b>Pull features</b> from Doris (feature-engineering team's tables), consented customers only.</span></li>
-        <li><span><b>Train</b> v1 (logistic) and challengers (EBM, XGBoost) on older loans.</span></li>
-        <li><span><b>Test</b> on newer loans. Every gate below must pass.</span></li>
-        <li><span><b>Register</b> a version with a plain-English model card.</span></li>
-        <li><span><b>Package</b> as a container (Jenkins, one repo → one image) and run on Iguazio next to Doris.</span></li>
-      </ol>
-      <h3>Rolling out safely</h3>
-      <ol class="howto small">
-        <li><span><b>Shadow</b> 2–4 weeks: score everything, decide nothing, compare.</span></li>
-        <li><span><b>Small slice</b> 5–10% of requests, compare repayment.</span></li>
-        <li><span><b>Champion and challenger</b>: a new model must win on profit to take over.</span></li>
-        <li><span><b>Fallback</b>: if slow or down, the tiny logistic model answers.</span></li>
-      </ol>
-    </div>
-  </div>
-  <div class="panel">
-    <h3>Before launch: the tests a model must pass</h3>
-    <div class="scroll"><table><thead><tr><th>Test</th><th>In plain words</th><th>Pass rule</th><th>Logistic (v1)</th><th>EBM (challenger)</th></tr></thead><tbody id="gates"></tbody></table></div>
-  </div>
-  <div class="grid2">
-    <div class="panel">
-      <h3>After launch: what we watch</h3>
-      <div class="scroll"><table><thead><tr><th>What</th><th>How often</th><th>Alarm when</th></tr></thead><tbody>
-        <tr><td><b>Speed and errors</b></td><td>Live</td><td>Slowest 5% over 100 ms, errors over 1%</td></tr>
-        <tr><td><b>Applicants changing</b> (drift)</td><td>Daily</td><td>Stability index over 0.1 watch, 0.25 act</td></tr>
-        <tr><td><b>Approval rate</b></td><td>Daily</td><td>Moves more than 5 points</td></tr>
-        <tr><td><b>Missed first instalment</b></td><td>Weekly</td><td>Above what the model predicted</td></tr>
-        <tr><td><b>Real defaults</b></td><td>Monthly</td><td>Ranking score drops 0.03+</td></tr>
-        <tr><td><b>Fairness and reasons</b></td><td>Monthly</td><td>Gaps widen or odd reasons appear</td></tr>
-      </tbody></table></div>
-      <p class="small muted">Monitoring results go to Doris and show in Superset, the same stack as today's dashboards.</p>
-    </div>
-    <div class="panel">
-      <h3>The blind spot</h3>
-      <p class="small">We only learn whether <b>approved</b> people repay. If the model wrongly rejects a group, we never find out, and the mistake locks itself in.</p>
-      <p class="small"><b>Fix:</b> give a small, budgeted number of near-the-line applicants a starter loan anyway, and learn from them.</p>
-      <h3>When we retrain</h3>
-      <ul class="clean small"><li>Applicants have drifted (stability index over 0.25)</li><li>Performance on recent loans drops</li><li>New product or policy</li><li>Otherwise every quarter</li></ul>
-      <details class="tech"><summary>For engineers</summary><div class="small"><p>Features computed daily by an MLRun job from Doris, cached in Redis for millisecond reads; one shared feature module for training and serving. FastAPI service as a stateless MLRun application (AD-3). Cut-offs in the partner's YAML. Async audit log of features, model version, score, decision, reasons. Reject inference via a randomised exploration band. PSI = Σ (a − e)·ln(a/e) over 10 score bands.</p></div></details>
-    </div>
-  </div>
+  </div></div>
+  <div class="row"><div class="lab"><b>Slow lane</b>building a model</div><div class="body">
+    <ol class="steps">
+      <li><span><b>Pull features</b> from the feature team's Doris tables, consented customers only.</span></li>
+      <li><span><b>Train</b> v1 (logistic) and the challengers on older loans.</span></li>
+      <li><span><b>Test</b> on newer loans. Every test below must pass.</span></li>
+      <li><span><b>Register</b> the version with a plain-English model card.</span></li>
+      <li><span><b>Package</b> as a container and run it on Iguazio, next to Doris.</span></li>
+    </ol>
+  </div></div>
+  <div class="row"><div class="lab"><b>Tests</b>before launch</div><div class="body">
+    <div class="scroll"><table><thead><tr><th>Test</th><th>In plain words</th><th>Logistic (v1)</th><th>EBM (challenger)</th></tr></thead><tbody id="gates"></tbody></table></div>
+  </div></div>
+  <div class="row"><div class="lab"><b>Rollout</b>going live safely</div><div class="body">
+    <ol class="steps">
+      <li><span><b>Shadow, 2–4 weeks.</b> The model scores every request but decides nothing. We compare.</span></li>
+      <li><span><b>Small slice, 5–10%.</b> It decides for a few customers. We compare repayment.</span></li>
+      <li><span><b>Champion and challenger.</b> A new model must make more money to take over.</span></li>
+      <li><span><b>Fallback.</b> If the service is slow or down, the tiny logistic model answers. A request never hangs.</span></li>
+    </ol>
+  </div></div>
+  <div class="row"><div class="lab"><b>Watching</b>after launch</div><div class="body">
+    <div class="scroll"><table><thead><tr><th>What we watch</th><th>How often</th><th>Alarm when</th></tr></thead><tbody>
+      <tr><td><b>Speed and errors</b></td><td>Live</td><td>Slowest answers pass 100 ms, or errors pass 1%</td></tr>
+      <tr><td><b>Are applicants changing?</b></td><td>Daily</td><td>Today's applicants look different from the ones we trained on</td></tr>
+      <tr><td><b>Approval rate</b></td><td>Daily</td><td>It jumps more than 5 points</td></tr>
+      <tr><td><b>Missed first instalment</b></td><td>Weekly</td><td>More than the model predicted</td></tr>
+      <tr><td><b>Real defaults</b></td><td>Monthly</td><td>The model ranks risk noticeably worse</td></tr>
+      <tr><td><b>Fairness and reasons</b></td><td>Monthly</td><td>Gaps between groups widen</td></tr>
+    </tbody></table></div>
+    <p><b>Retrain</b> when applicants have changed, when results on recent loans drop, when a partner changes product or policy, and otherwise every quarter.</p>
+    <p class="note"><b>The blind spot.</b> We only learn whether approved people repay. If the model wrongly rejects a group, we never find out. The fix is to give a small, budgeted number of near-the-line applicants a starter loan anyway and learn from them.</p>
+    <details class="deep"><summary>For engineers</summary><div class="small"><p>Features computed daily by an MLRun job from Doris and cached in Redis for millisecond reads; one shared feature module for training and serving. FastAPI service as a stateless MLRun application, one repo → one Jenkins image. Cut-offs live in the partner's YAML. Every request logged asynchronously with features, model version, score, decision and reasons. Drift measured with the population stability index: below 0.10 stable, above 0.25 act. Monitoring tables land in Doris and show in Superset.</p></div></details>
+  </div></div>
+  <div class="next"></div>
 </section>
 
-<!-- ================= Q&A ================= -->
-<section class="view" id="v-qa" hidden>
-  <div class="lede"><span class="eyebrow">Q&amp;A</span><h1>The plan, and the questions people will ask</h1></div>
-  <div class="grid3" id="tiers"></div>
-  <div style="display:grid;gap:8px" id="qaList"></div>
+<!-- ============ Q&A ============ -->
+<section class="ch" id="v-qa" hidden>
+  <div class="lede">
+    <span class="kicker">Chapter 7 · Q&amp;A</span>
+    <h1>The questions you'll be asked.</h1>
+    <p>Open each one, read the answer out loud once, and you're ready.</p>
+  </div>
+  <div id="qaList"></div>
 </section>
-
 </main>
+</div>
 
 <script src="demo_data.js"></script>
 <script>
 (() => {
-const D = window.DEMO;
-const $ = s => document.querySelector(s);
+const D = window.DEMO, M = D.models;
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, h = '') => { const e = document.createElement(t); for (const k in a) e.setAttribute(k, a[k]); e.innerHTML = h; return e; };
 const fmt = (v, d = 0) => Number(v).toLocaleString('en-KE', {minimumFractionDigits: d, maximumFractionDigits: d});
 const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
 const kes = v => (v < 0 ? '−' : '') + 'KES ' + fmt(Math.abs(v));
 const kesM = v => (v < 0 ? '−' : '') + 'KES ' + (Math.abs(v) / 1e6).toFixed(2) + 'M';
 const sgn = (v, d = 2) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d);
+const pts = v => sgn(v * 100, 0);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const sig = z => 1 / (1 + Math.exp(-z));
 const ORDER = ['logreg', 'ebm', 'xgb', 'forest', 'tree', 'mlp', 'svm'];
-const COLOR = {logreg: '--s1', ebm: '--s3', xgb: '--s2', forest: '--s5', tree: '--s7', mlp: '--s4', svm: '--s6'};
-const EXPL = {logreg: ['ok', 'Yes, exactly'], ebm: ['ok', 'Yes, exactly'], tree: ['ok', 'Yes, a flowchart'], xgb: ['warn', 'Only with SHAP add-on'], forest: ['warn', 'Only with add-on'], mlp: ['bad', 'No'], svm: ['bad', 'No']};
-const FEAT = D.features.map(f => f.f), FL = Object.fromEntries(D.features.map(f => [f.f, f])), M = D.models;
+const COLOR = {logreg: '--c1', ebm: '--c3', xgb: '--c2', forest: '--c5', tree: '--c7', mlp: '--c4', svm: '--c6'};
+const NAME = {logreg: 'Logistic regression', ebm: 'EBM', xgb: 'XGBoost', forest: 'Random forest', tree: 'Decision tree', mlp: 'Neural network', svm: 'Support vector machine'};
+const EXPL = {logreg: ['ok', 'Explains itself'], ebm: ['ok', 'Explains itself'], tree: ['ok', 'Explains itself'], xgb: ['warn', 'Needs an add-on'], forest: ['warn', 'Needs an add-on'], mlp: ['bad', 'Can\'t explain'], svm: ['bad', 'Can\'t explain']};
+const FEAT = D.features.map(f => f.f), FL = Object.fromEntries(D.features.map(f => [f.f, f]));
+FL.BUREAU_SCORE_2.label = 'Outside credit score A'; FL.BUREAU_SCORE_3.label = 'Outside credit score B';
 
-/* ---------- routing ---------- */
-const VIEWS = ['overview', 'data', 'models', 'results', 'try', 'api', 'qa'];
+/* ---------- chapters ---------- */
+const CH = [['start', 'Start here'], ['data', 'The data'], ['models', 'The models'], ['results', 'Results'], ['try', 'Try it'], ['serve', 'Serving it'], ['qa', 'Q&A']];
+let seen = new Set(); try { seen = new Set(JSON.parse(localStorage.getItem('zd-seen') || '[]')); } catch (e) {}
 function route() {
-  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
-  VIEWS.forEach(n => { $('#v-' + n).hidden = n !== v; });
-  document.querySelectorAll('nav.tabs a').forEach(a => { if (a.getAttribute('href') === '#' + v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  if (v === 'models') renderModel();
+  const v = CH.some(c => c[0] === location.hash.slice(1)) ? location.hash.slice(1) : 'start';
+  seen.add(v); try { localStorage.setItem('zd-seen', JSON.stringify([...seen])); } catch (e) {}
+  CH.forEach(([k]) => { $('#v-' + k).hidden = k !== v; });
+  $('#nav').innerHTML = CH.map(([k, n], i) => `<a href="#${k}" class="${seen.has(k) ? 'seen' : ''}" ${k === v ? 'aria-current="page"' : ''}><span class="dot">${seen.has(k) && k !== v ? '✓' : i + 1}</span>${n}</a>`).join('');
+  if (v === 'models') renderLesson();
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
+CH.forEach(([k], i) => { const n = $('#v-' + k + ' .next'); if (n && CH[i + 1]) n.innerHTML = `<a href="#${CH[i + 1][0]}">Next: ${CH[i + 1][1]} →</a>`; });
 
-/* ---------- formatting ---------- */
+/* ---------- helpers ---------- */
 function fmtFeat(f, v) {
   if (v == null) return 'unknown';
   if (['INCOME', 'LOAN_AMOUNT', 'ANNUITY'].includes(f)) return fmt(v);
-  if (['LATE_SHARE', 'UNDERPAY_SHARE', 'ANNUITY_INCOME', 'PAYMENT_RATE'].includes(f)) return pct(v, 1);
+  if (['LATE_SHARE', 'UNDERPAY_SHARE', 'ANNUITY_INCOME', 'PAYMENT_RATE'].includes(f)) return pct(v, 0);
   if (f.startsWith('BUREAU')) return v.toFixed(2);
   if (f === 'REGION_RATING' || f === 'N_PAST_INSTALMENTS') return fmt(v);
-  if (f === 'AVG_DAYS_LATE') return v.toFixed(1) + ' d';
-  return v.toFixed(1) + ' y';
+  if (f === 'AVG_DAYS_LATE') return v.toFixed(1) + ' days';
+  return v.toFixed(0) + ' yrs';
 }
-function rng(f) { const F = FL[f]; let lo = Math.min(F.p05, 0), hi = F.p95; if (f === 'REGION_RATING') { lo = 1; hi = 3; } if (f.startsWith('BUREAU')) { lo = 0; hi = 0.9; } if (f === 'LATE_SHARE' || f === 'UNDERPAY_SHARE') { lo = 0; hi = 1; } if (f === 'AGE') { lo = 20; hi = 70; } if (f === 'ANNUITY_INCOME') { lo = 0.02; hi = 0.5; } return [lo, Math.max(hi, lo + 1e-6)]; }
-const UNIT = {AGE: [10, '10 years older'], INCOME: [100000, '+100,000 income'], LOAN_AMOUNT: [100000, '+100,000 loan'], ANNUITY: [10000, '+10,000 instalment'], PAYMENT_RATE: [0.01, '+1 point'], ANNUITY_INCOME: [0.1, '+10 points'], YEARS_EMPLOYED: [1, '+1 year'], REGION_RATING: [1, '1 level worse'], PHONE_YEARS: [1, '+1 year'], BUREAU_SCORE_2: [0.1, '+0.1 score'], BUREAU_SCORE_3: [0.1, '+0.1 score'], LATE_SHARE: [0.1, '+10 points late'], AVG_DAYS_LATE: [10, '+10 days late'], UNDERPAY_SHARE: [0.1, '+10 points short'], N_PAST_INSTALMENTS: [10, '+10 instalments']};
+function rng(f) { const F = FL[f]; let lo = Math.min(F.p05, 0), hi = F.p95; if (f === 'REGION_RATING') { lo = 1; hi = 3; } if (f.startsWith('BUREAU')) { lo = 0; hi = 0.9; } if (f === 'LATE_SHARE' || f === 'UNDERPAY_SHARE') { lo = 0; hi = 1; } if (f === 'AGE') { lo = 20; hi = 70; } return [lo, Math.max(hi, lo + 1e-6)]; }
+const UNIT = {AGE: [10, '10 years older'], INCOME: [100000, '100,000 more income'], LOAN_AMOUNT: [100000, '100,000 bigger loan'], ANNUITY: [10000, '10,000 bigger instalment'], PAYMENT_RATE: [0.01, '1 point faster payback'], ANNUITY_INCOME: [0.1, '10 points more of income'], YEARS_EMPLOYED: [1, '1 more year employed'], REGION_RATING: [1, '1 level worse region'], PHONE_YEARS: [1, '1 more year on the phone'], BUREAU_SCORE_2: [0.1, '0.1 higher score'], BUREAU_SCORE_3: [0.1, '0.1 higher score'], LATE_SHARE: [0.1, '10 points more paid late'], AVG_DAYS_LATE: [10, '10 more days late'], UNDERPAY_SHARE: [0.1, '10 points more paid short'], N_PAST_INSTALMENTS: [10, '10 more past instalments']};
 const EXPECT = Object.fromEntries(FEAT.map(f => [f, FL[f].mono])); EXPECT.LOAN_AMOUNT = 1;
 
-/* ---------- scorers ---------- */
+/* ---------- scorers (exported from the trained models) ---------- */
 const LRW = FEAT.map((f, i) => ({f, w: D.lr.coef[i] / D.lr.scale[i], avg: D.lr.mean[i], med: D.lr.median[i]}));
 function lrScore(x) { let z = D.lr.intercept; const c = {}; LRW.forEach(r => { const v = x[r.f] == null ? r.med : x[r.f]; c[r.f] = r.w * (v - r.avg); z += c[r.f]; }); return {p: sig(z), z, base: D.lr.intercept, contrib: c}; }
 function ebmIdx(t, v) { if (v == null) return 0; let lo = 0, hi = t.cuts.length; while (lo < hi) { const m = (lo + hi) >> 1; if (t.cuts[m] <= v) lo = m + 1; else hi = m; } return lo + 1; }
@@ -497,22 +473,35 @@ function leaf(t, x) { let n = t; while (n.l === undefined) n = go(n, x); return 
 function xgbScore(x) { let z = D.xgb.base_margin; const c = Object.fromEntries(FEAT.map(f => [f, 0])); D.xgb.trees.forEach(t => { let n = t; z += t.e; while (n.l === undefined) { const nx = go(n, x); c[n.s] += nx.e - n.e; n = nx; } }); FEAT.forEach(f => { z += c[f]; }); return {p: sig(z), z, base: D.xgb.base_margin, contrib: c}; }
 const SCORERS = {logreg: lrScore, ebm: ebmScore, xgb: xgbScore};
 
-/* ---------- economics ---------- */
+/* ---------- money ---------- */
+const E = {loan: 5000, fee: 10, loss: 80};
+const econ = () => ({M: E.loan * E.fee / 100, Lo: E.loan * E.loss / 100});
 const scale = 10000 / D.meta.test;
-const econ = () => { const L = +$('#inLoan').value || 5000; return {M: L * (+$('#inFee').value || 10) / 100, Lo: L * (+$('#inLgd').value || 80) / 100}; };
 const profitAt = (g, e) => (g.tn * e.M - g.fn * e.Lo) * scale;
-const bestCut = (k, e) => M[k].grid.reduce((a, b) => profitAt(b, e) > profitAt(a, e) ? b : a);
-const pickCut = (k, e) => $('#inMode').value === 'manual' ? M[k].grid[+$('#inCut').value] : bestCut(k, e);
+const bestCut = (k, e = econ()) => M[k].grid.reduce((a, b) => profitAt(b, e) > profitAt(a, e) ? b : a);
 const g0 = M.logreg.grid[0], GOODS = g0.tn + g0.fp, BADS = g0.tp + g0.fn;
 const approveAll = e => (GOODS * e.M - BADS * e.Lo) * scale;
-function decision(p, cut) { if (p < cut * 0.8) return ['ok', 'Approve']; if (p < cut * 1.25) return ['warn', 'Starter loan / review']; return ['bad', 'Decline']; }
+function decision(p, cut) { if (p < cut * 0.8) return ['ok', 'APPROVE']; if (p < cut * 1.25) return ['warn', 'STARTER LOAN']; return ['bad', 'DECLINE']; }
+function slip(k, x, who) {
+  const r = SCORERS[k](x), cut = bestCut(k).c, d = decision(r.p, cut);
+  const top = FEAT.map(f => [f, r.contrib[f]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
+  return `<div class="slip"><div class="hd"><span>DECISION SLIP</span><span>${NAME[k].toUpperCase()}</span></div>
+    ${who ? `<div class="ln"><span>Applicant</span><span>${who}</span></div>` : ''}
+    <div class="ln"><span>Chance of not repaying</span></div><div class="big">${pct(r.p)}</div>
+    <div class="ln"><span>Our line</span><span>${pct(cut)}</span></div>
+    <span class="dec ${d[0]}">${d[1]}</span>
+    <div class="why">${top.map(([f, c]) => `<span>${c >= 0 ? '▲' : '▼'} ${FL[f].label} (${fmtFeat(f, x[f])})</span>`).join('')}</div></div>`;
+}
+function syncEcon() { $$('input.econ').forEach(i => { if (document.activeElement !== i) i.value = E[i.dataset.k]; }); }
+document.addEventListener('input', ev => { const i = ev.target.closest && ev.target.closest('input.econ'); if (!i) return; const v = +i.value; if (v > 0) { E[i.dataset.k] = v; syncEcon(); renderAll(); } });
 
 /* ---------- charts ---------- */
 function lineChart(host, series, o = {}) {
-  const {xMin = 0, xMax = 1, yMin = 0, yMax = 1, xLab = '', yLab = '', xFmt = v => v, yFmt = v => v, diag = false, marks = [], ticks = 4, logx = false, xTicks, h = 240} = o;
-  const W2 = 560, H = h, L = 60, R = 14, T = 14, B = 36, tx = v => logx ? Math.log10(v) : v;
-  const X = v => L + (tx(v) - tx(xMin)) / (tx(xMax) - tx(xMin)) * (W2 - L - R), Y = v => T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B);
-  let s = `<svg viewBox="0 0 ${W2} ${H}" width="100%" role="img" aria-label="${yLab} by ${xLab}">`;
+  if (!host) return;
+  const {xMin = 0, xMax = 1, yMin = 0, yMax = 1, xLab = '', xFmt = v => v, yFmt = v => v, diag = false, marks = [], ticks = 4, logx = false, xTicks, h = 220} = o;
+  const W2 = 560, H = h, L = 56, R = 14, T = 14, B = 36, tx = v => logx ? Math.log10(v) : v;
+  const X = v => L + (tx(v) - tx(xMin)) / (tx(xMax) - tx(xMin)) * (W2 - L - R), Y = v => T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B), cl = v => Math.max(yMin, Math.min(yMax, v));
+  let s = `<svg viewBox="0 0 ${W2} ${H}" width="100%" role="img" aria-label="${xLab}">`;
   for (let i = 0; i <= ticks; i++) { const yv = yMin + (yMax - yMin) * i / ticks; s += `<line class="axis" x1="${L}" x2="${W2 - R}" y1="${Y(yv)}" y2="${Y(yv)}" stroke-opacity=".6"/><text x="${L - 6}" y="${Y(yv) + 3}" text-anchor="end">${yFmt(yv)}</text>`; }
   (xTicks || Array.from({length: ticks + 1}, (_, i) => xMin + (xMax - xMin) * i / ticks)).forEach(xv => { s += `<text x="${X(xv)}" y="${H - 18}" text-anchor="middle">${xFmt(xv)}</text>`; });
   s += `<text x="${(L + W2 - R) / 2}" y="${H - 3}" text-anchor="middle">${xLab}</text>`;
@@ -520,395 +509,301 @@ function lineChart(host, series, o = {}) {
   if (yMin < 0 && yMax > 0) s += `<line x1="${L}" x2="${W2 - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css('--muted')}"/>`;
   marks.forEach(mk => { s += `<line x1="${X(mk.x)}" x2="${X(mk.x)}" y1="${T}" y2="${H - B}" stroke="${css('--muted')}" stroke-dasharray="3 3"/><text x="${X(mk.x) + 4}" y="${T + 10}">${mk.label}</text>`; });
   series.forEach(se => {
-    const d = se.pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ',' + Y(Math.max(yMin, Math.min(yMax, p[1]))).toFixed(1)).join('');
-    s += `<path d="${d}" fill="none" stroke="${css(se.color)}" stroke-width="${se.hi === false ? 1.2 : 2.4}" stroke-opacity="${se.hi === false ? .4 : 1}" ${se.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
-    if (se.dots) se.pts.forEach(p => { s += `<circle cx="${X(p[0])}" cy="${Y(Math.max(yMin, Math.min(yMax, p[1])))}" r="${se.hi === false ? 2 : 3.5}" fill="${css(se.color)}" fill-opacity="${se.hi === false ? .45 : 1}"/>`; });
-    if (se.end) s += `<circle cx="${X(se.end[0])}" cy="${Y(Math.max(yMin, Math.min(yMax, se.end[1])))}" r="5.5" fill="${css(se.color)}" stroke="${css('--surface')}" stroke-width="2"/>`;
+    s += `<path d="${se.pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ',' + Y(cl(p[1])).toFixed(1)).join('')}" fill="none" stroke="${css(se.color)}" stroke-width="${se.hi === false ? 1.2 : 2.4}" stroke-opacity="${se.hi === false ? .4 : 1}" ${se.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
+    if (se.dots) se.pts.forEach(p => { s += `<circle cx="${X(p[0])}" cy="${Y(cl(p[1]))}" r="${se.hi === false ? 2 : 3.5}" fill="${css(se.color)}" fill-opacity="${se.hi === false ? .45 : 1}"/>`; });
+    if (se.end) s += `<circle cx="${X(se.end[0])}" cy="${Y(cl(se.end[1]))}" r="5.5" fill="${css(se.color)}" stroke="${css('--surface')}" stroke-width="2"/>`;
   });
   host.innerHTML = s + '</svg>';
 }
 
-/* ================= OVERVIEW ================= */
-function renderLine() {
-  const L = +$('#oLoan').value || 5000, Mg = L * (+$('#oFee').value || 10) / 100, Ls = L * (+$('#oLoss').value || 80) / 100, c = Mg / (Mg + Ls);
-  $('#lineCalc').innerHTML = `<div class="cm" style="grid-template-columns:1fr 1fr"><div class="good"><b>${kes(Mg)}</b>earned if she repays (M)</div><div class="loss"><b>${kes(Ls)}</b>lost if she doesn't (L)</div></div>
-    <div class="fx"><span class="lbl">The line</span><div class="eq">decline if risk ≥ M ÷ (M + L)</div><div class="withnum">= ${fmt(Mg)} ÷ (${fmt(Mg)} + ${fmt(Ls)}) = <b>${pct(c)}</b></div></div>
-    <p class="say">One mistake costs ${(Ls / Mg).toFixed(0)}× the other, so we decline once the risk passes ${pct(c, 0)}. We don't wait until we're sure she'll default.</p>`;
-}
-['#oLoan', '#oFee', '#oLoss'].forEach(s => $(s).addEventListener('input', renderLine));
-const LAYERS = [
-  ['L0–1', 'Partner settings + data pipeline', 'MLRun on Iguazio', 'One settings file per partner; the pipeline slices M-PESA data per client. Aventus or M-KOPA = one more file.'],
-  ['L2', 'Doris', 'Where the data and features live', 'The feature-engineering team\'s tables. The Decision API reads features from here.'],
-  ['L3–5', 'Dashboards · definitions · chat', 'Superset · OpenMetadata · CI', 'Today\'s Zuri: shows what happened and answers questions about it.'],
-  ['AI', 'Decision API', 'Intelligence layer: the empty slot this fills', 'Reserved in the architecture as "Predictive Analytics PI-1…4". The Decision API is PI-1: should we lend? Later: who to target, did a campaign work, who\'s leaving.', true],
-  ['L6–7', 'Zuri API + screens', 'Next.js · React', 'The front door and the dashboards. Adds a decision screen for lenders.'],
-];
-function renderStack(sel = 3) {
-  const s = $('#stack'); s.innerHTML = '';
-  LAYERS.forEach((L, i) => { const b = el('button', {class: 'layer' + (L[4] ? ' intel' : ''), 'aria-pressed': String(i === sel)}, `<span class="tag">${L[0]}</span><span><b>${L[1]}</b><small>${L[2]}</small></span>${L[4] ? '<span class="chip info">New</span>' : '<span class="chip neutral">Live</span>'}`); b.onclick = () => renderStack(i); s.append(b); });
-  $('#layerDetail').innerHTML = `<p>${LAYERS[sel][3]}</p>`;
+/* ================= START ================= */
+const W0 = {AGE: 29, INCOME: 135000, LOAN_AMOUNT: 450000, ANNUITY: 22500, PAYMENT_RATE: 0.05, ANNUITY_INCOME: 0.1667, YEARS_EMPLOYED: 2, REGION_RATING: 2, PHONE_YEARS: 2, BUREAU_SCORE_2: 0.45, BUREAU_SCORE_3: 0.40, LATE_SHARE: 0.15, AVG_DAYS_LATE: 1.5, UNDERPAY_SHARE: 0.05, N_PAST_INSTALMENTS: 20};
+let W = {...W0};
+function renderStart() {
+  const e = econ(), c = e.M / (e.M + e.Lo);
+  $('#startSlip').innerHTML = slip('logreg', W0, 'Wanjiku, 29');
+  $('#lineCalc').innerHTML = `<div class="fx"><div class="eq">say no when the chance is at least &nbsp; fee ÷ ( fee + loss )</div><div class="words">One mistake costs about ${(e.Lo / e.M).toFixed(0)} times the other. So we say no once the chance passes ${pct(c, 0)}. We don't wait until we're sure she won't pay.</div><div class="live">= ${fmt(e.M)} ÷ (${fmt(e.M)} + ${fmt(e.Lo)}) = <b>${pct(c)}</b></div></div>`;
+  $('#plan').innerHTML = [['Goes live first', 'Logistic regression', 'Marvin\'s model. A table of features and weights that can be shown in court.', 'info'], ['Challenger', 'EBM', 'Same idea with learned curves. Takes over only if it makes more money and legal accepts it.', 'ok'], ['Yardstick', 'XGBoost', 'Most accurate, least explainable. Shows how much accuracy we could be missing.', 'warn']]
+    .map(t => `<div class="box"><span class="chip ${t[3]}" style="justify-self:start">${t[0]}</span><h3>${t[1]}</h3><p class="small muted">${t[2]}</p></div>`).join('');
 }
 
 /* ================= DATA ================= */
 const GROUPS = [['Can they afford it?', ['ANNUITY_INCOME', 'INCOME', 'LOAN_AMOUNT', 'ANNUITY', 'PAYMENT_RATE']], ['Do they pay on time?', ['LATE_SHARE', 'AVG_DAYS_LATE', 'UNDERPAY_SHARE', 'N_PAST_INSTALMENTS']], ['Are they stable?', ['YEARS_EMPLOYED', 'PHONE_YEARS', 'AGE', 'REGION_RATING']], ['What do others say?', ['BUREAU_SCORE_2', 'BUREAU_SCORE_3']]];
-const WHY = {ANNUITY_INCOME: 'A big instalment versus income leaves no room for a bad month.', INCOME: 'More coming in, more room to repay.', LOAN_AMOUNT: 'Bigger loans are harder to clear.', ANNUITY: 'The amount due each period.', PAYMENT_RATE: 'Short, heavy loans behave differently.', LATE_SHARE: 'Past behaviour predicts future behaviour.', AVG_DAYS_LATE: 'A day late differs from a month late.', UNDERPAY_SHARE: 'Paying part of what is owed is an early stress signal.', N_PAST_INSTALMENTS: 'A longer track record is more reliable.', YEARS_EMPLOYED: 'Steady income source.', PHONE_YEARS: 'Keeping the same SIM signals stability.', AGE: 'Risk usually falls with age.', REGION_RATING: 'Local economy affects everyone there.', BUREAU_SCORE_2: 'What other lenders already know.', BUREAU_SCORE_3: 'A second outside opinion.'};
-function renderData() {
-  $('#dRows').textContent = fmt(D.meta.rows); $('#dRate').textContent = '8 in 100';
-  const imp = D.ebm.importance, mx = Math.max(...Object.values(imp));
-  $('#featTable').innerHTML = GROUPS.map(([g, fs]) => `<tr><td colspan="4" style="background:var(--sunk)"><b>${g}</b></td></tr>` + fs.map(f => `<tr><td><b>${FL[f].label}</b></td><td class="small">${WHY[f]}</td><td class="small muted">${FL[f].safaricom}</td><td><div class="hbar"><i style="width:${imp[f] / mx * 100}%"></i></div></td></tr>`).join('')).join('');
-}
+const WHY = {ANNUITY_INCOME: 'A big instalment against income leaves no room for a bad month.', INCOME: 'More coming in, more room to repay.', LOAN_AMOUNT: 'Bigger loans are harder to clear.', ANNUITY: 'The amount due each period.', PAYMENT_RATE: 'Short, heavy loans behave differently.', LATE_SHARE: 'Past behaviour predicts future behaviour.', AVG_DAYS_LATE: 'A day late is not a month late.', UNDERPAY_SHARE: 'Paying part of what is owed is an early stress signal.', N_PAST_INSTALMENTS: 'A longer track record is more reliable.', YEARS_EMPLOYED: 'Steady income source.', PHONE_YEARS: 'Keeping the same line signals stability.', AGE: 'Risk usually falls with age.', REGION_RATING: 'The local economy affects everyone there.', BUREAU_SCORE_2: 'What other lenders already know.', BUREAU_SCORE_3: 'A second outside opinion.'};
+$('#featTable').innerHTML = GROUPS.map(([g, fs]) => `<tr><td colspan="3" style="background:var(--sunk)"><b>${g}</b></td></tr>` + fs.map(f => `<tr><td><b>${FL[f].label}</b></td><td class="small">${WHY[f]}</td><td class="small muted">${FL[f].safaricom}</td></tr>`).join('')).join('');
 
-/* ================= MODELS ================= */
-const W0 = {AGE: 29, INCOME: 135000, LOAN_AMOUNT: 450000, ANNUITY: 22500, PAYMENT_RATE: 0.05, ANNUITY_INCOME: 0.1667, YEARS_EMPLOYED: 2, REGION_RATING: 2, PHONE_YEARS: 1, BUREAU_SCORE_2: 0.45, BUREAU_SCORE_3: 0.40, LATE_SHARE: 0.15, AVG_DAYS_LATE: 1.5, UNDERPAY_SHARE: 0.05, N_PAST_INSTALMENTS: 20};
-let W = {...W0};
-const SLIDE = ['LATE_SHARE', 'BUREAU_SCORE_3', 'BUREAU_SCORE_2', 'YEARS_EMPLOYED', 'AGE', 'ANNUITY_INCOME'];
-function buildSliders() {
-  $('#wSliders').innerHTML = SLIDE.map(f => { const [lo, hi] = rng(f); return `<div class="sl"><div class="row"><span>${FL[f].label}</span><span id="wv-${f}"></span></div><input type="range" id="ws-${f}" min="0" max="1000" aria-label="${FL[f].label}"></div>`; }).join('');
-  SLIDE.forEach(f => { const [lo, hi] = rng(f); const r = $('#ws-' + f); r.oninput = () => { W[f] = lo + (hi - lo) * r.value / 1000; if (f === 'AGE') W[f] = Math.round(W[f]); refreshW(); }; });
-  syncSliders();
-}
-function syncSliders() { SLIDE.forEach(f => { const [lo, hi] = rng(f); $('#ws-' + f).value = Math.round((W[f] - lo) / (hi - lo) * 1000); }); }
+/* ================= LESSONS ================= */
+const SLIDE = ['LATE_SHARE', 'BUREAU_SCORE_3', 'YEARS_EMPLOYED', 'AGE'];
+$('#wSliders').innerHTML = SLIDE.map(f => `<div class="sl"><div class="r"><span>${FL[f].label}</span><span id="wv-${f}"></span></div><input type="range" id="ws-${f}" min="0" max="1000" aria-label="${FL[f].label}"></div>`).join('');
+SLIDE.forEach(f => { const [lo, hi] = rng(f), r = $('#ws-' + f); r.oninput = () => { W[f] = lo + (hi - lo) * r.value / 1000; if (f === 'AGE' || f === 'YEARS_EMPLOYED') W[f] = Math.round(W[f]); refreshW(); }; });
+const syncSliders = () => SLIDE.forEach(f => { const [lo, hi] = rng(f); $('#ws-' + f).value = Math.round((W[f] - lo) / (hi - lo) * 1000); });
 $('#resetW').onclick = () => { W = {...W0}; syncSliders(); refreshW(); };
-function refreshW() {
-  SLIDE.forEach(f => { $('#wv-' + f).textContent = fmtFeat(f, W[f]); });
-  const cut = M.logreg.grid.length ? bestCut('logreg', econ()).c : .11;
-  $('#liveChips').innerHTML = ['logreg', 'ebm', 'xgb'].map(k => { const p = SCORERS[k](W).p, d = decision(p, bestCut(k, econ()).c); return `<span class="livechip"><span class="muted">${M[k].label}</span><b>${pct(p)}</b><span class="chip ${d[0]}">${d[1]}</span></span>`; }).join('');
-  renderModel(true);
-}
+let benchModel = 'logreg';
+function refreshW() { SLIDE.forEach(f => { $('#wv-' + f).textContent = fmtFeat(f, W[f]); }); $('#benchSlip').innerHTML = slip(benchModel, W, 'Wanjiku'); if (!$('#v-models').hidden) renderLesson(); }
 
-const SYM = {
-  p: ['p', 'Her chance of not repaying, between 0% and 100%.', 'Predicted probability of default, P(y = 1 | x).'],
-  z: ['z', 'Her total "risk points". Any number, negative or positive.', 'Linear predictor = log-odds of default.'],
-  z0: ['z̄', 'Where everyone starts: the risk points of a perfectly average applicant.', 'Intercept on standardised features = log-odds at the feature means.'],
-  w: ['wⱼ', 'How much feature j matters: risk points per one unit of it. Positive raises risk, negative lowers it.', 'Coefficient βⱼ ÷ σⱼ, i.e. per raw unit.'],
-  x: ['xⱼ', 'Wanjiku\'s value for feature j.', 'Feature value (missing → training median).'],
-  xbar: ['x̄ⱼ', 'The average applicant\'s value for feature j.', 'Training mean of feature j.'],
-  sum: ['Σ', '"Add up, for every feature." Here, all 15.', 'Summation over j = 1…p, p = 15.'],
-  e: ['e', 'A fixed number, about 2.718. It shows up whenever things grow or shrink by percentages.', 'Euler\'s number; e^z inverts the natural log.'],
-  c: ['c', 'The line: decline at or above this risk. Set from the money, not by the model.', 'c = M / (M + L), the break-even PD.'],
-  Mg: ['M', 'What we earn if she repays (the fee).', 'Margin on a good loan.'],
-  Ls: ['L', 'What we lose if she doesn\'t (after any recovery).', 'Loss given default × exposure.'],
-  f: ['fⱼ(xⱼ)', 'A learned lookup curve for feature j: find her value, read off the points. It can bend; logistic\'s can\'t.', 'Shape function of a generalised additive model, learned by cyclic gradient boosting on one feature at a time.'],
-  F0: ['F₀', 'The starting guess for everyone: the average risk (about 8%).', 'Base margin = logit(base rate).'],
-  eta: ['η', 'How much we trust each new tree (0.05 = keep only 5% of its correction). Small careful steps generalise better.', 'Learning rate / shrinkage.'],
-  fm: ['fₘ(x)', 'Tree number m: a small yes/no flowchart that nudges her score to fix earlier mistakes.', 'm-th regression tree fitted to the gradients of the loss.'],
-  Mt: ['M', 'How many trees in the relay (500 here).', 'Number of boosting rounds.'],
-  G: ['G', 'How mixed a group is. 0 = everyone the same; 0.5 = half payers, half defaulters.', 'Gini impurity.'],
-  pk: ['pₖ', 'Share of the group in class k (payers, or defaulters).', 'Class proportion in the node.'],
-  y: ['y', 'What really happened: 1 = didn\'t repay, 0 = repaid.', 'Binary label.'],
-  loss: ['loss', 'The penalty for one prediction. Being confident and wrong costs the most.', 'Binary cross-entropy (log-loss).'],
-  lr: ['α', 'Step size: how far to nudge a weight each time.', 'Learning rate of gradient descent.'],
-};
-let symSel = null;
-const sym = (k, label) => `<button class="sym" type="button" data-s="${k}" aria-pressed="${symSel === k}">${label || SYM[k][0]}</button>`;
-function symBox() { if (!symSel || !SYM[symSel]) return '<div class="symbox"><span class="t">Click a highlighted symbol to see what it means.</span></div>'; const s = SYM[symSel]; return `<div class="symbox"><span><span class="s">${s[0]}</span> &nbsp;${s[1]}</span><span class="t">Technical: ${s[2]}</span></div>`; }
-$('#mdetail').addEventListener('click', ev => { const b = ev.target.closest('button.sym'); if (!b) return; symSel = symSel === b.dataset.s ? null : b.dataset.s; renderModel(true); });
-
-function curveChart(host, f) {
-  const t = D.ebm.terms.find(x => x.f === f), [lo, hi] = rng(f), pts = [];
-  for (let i = 0; i <= t.cuts.length; i++) { const a = i === 0 ? lo : Math.max(lo, t.cuts[i - 1]), b = i === t.cuts.length ? hi : Math.min(hi, t.cuts[i]); if (b < lo || a > hi || b <= a) continue; pts.push([a, t.scores[i + 1] * 100], [b, t.scores[i + 1] * 100]); }
-  const r = LRW.find(q => q.f === f), lin = [[lo, r.w * (lo - r.avg) * 100], [hi, r.w * (hi - r.avg) * 100]];
-  const ys = pts.concat(lin).map(p => p[1]), yMin = Math.min(0, ...ys) - 5, yMax = Math.max(0, ...ys) + 5, wv = Math.max(lo, Math.min(hi, W[f]));
-  lineChart(host, [{pts: lin, color: '--s1', dash: true, hi: true, end: [wv, r.w * (wv - r.avg) * 100]}, {pts, color: '--s3', end: [wv, t.scores[ebmIdx(t, W[f])] * 100]}], {xMin: lo, xMax: hi, yMin, yMax, xLab: FL[f].label, yLab: 'risk points', xFmt: v => fmtFeat(f, v), yFmt: v => (v >= 0 ? '+' : '') + v.toFixed(0), h: 210});
+const sym = (k, label) => `<button class="sym" type="button" data-s="${k}">${label}</button>`;
+const legend = rows => `<div class="scroll"><table class="legend"><thead><tr><th>Symbol</th><th>Read it as</th><th>For Wanjiku</th></tr></thead><tbody>${rows.map(r => `<tr data-s="${r[0]}"><td>${r[1]}</td><td>${r[2]}</td><td>${r[3] || ''}</td></tr>`).join('')}</tbody></table></div>`;
+const fx = (eq, live, words) => `<div class="fx"><div class="eq">${eq}</div>${words ? `<div class="words">${words}</div>` : ''}${live ? `<div class="live">${live}</div>` : ''}</div>`;
+const SQUASH = z => `1 ÷ (1 + e<sup>${(-z).toFixed(2)}</sup>) = 1 ÷ (1 + ${Math.exp(-z).toFixed(2)})`;
+function pointsTable(r, n = 5) {
+  const rows = FEAT.map(f => [f, r.contrib[f]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])), top = rows.slice(0, n), rest = rows.slice(n).reduce((s, x) => s + x[1], 0);
+  return `<div class="scroll"><table style="max-width:560px"><thead><tr><th>Fact</th><th class="n">Hers</th><th class="n">Risk points</th></tr></thead><tbody><tr><td>Start (an average applicant)</td><td></td><td class="n">${pts(r.base)}</td></tr>${top.map(([f, c]) => `<tr><td>${FL[f].label}</td><td class="n">${fmtFeat(f, W[f])}</td><td class="n" style="color:var(${c >= 0 ? '--bad' : '--ok'})">${pts(c)}</td></tr>`).join('')}<tr><td>The other ${FEAT.length - n} facts together</td><td></td><td class="n">${pts(rest)}</td></tr><tr class="total"><td>Total</td><td></td><td class="n">${pts(r.z)}</td></tr><tr><td>Turned into a chance</td><td></td><td class="n"><b>${pct(r.p)}</b></td></tr></tbody></table></div>`;
 }
 function treeHTML(n, x, hit = true) {
-  if (!n.f) return `<div class="tnode${hit ? ' hit' : ''}"><b class="mono">${pct(n.rate)}</b> didn't repay<br><span class="tiny muted">${fmt(n.n)} people</span></div>`;
-  const v = x[n.f] == null ? FL[n.f].median : x[n.f], yes = v <= n.t;
-  return `<div class="tree"><div class="tnode q${hit ? ' hit' : ''}">${FL[n.f].label} ≤ <b class="mono">${fmtFeat(n.f, n.t)}</b>?<br><span class="tiny muted">${fmt(n.n)} people · ${pct(n.rate)} didn't repay</span></div><div class="tbranch"><div><span class="tlabel">yes</span>${treeHTML(n.y, x, hit && yes)}</div><div><span class="tlabel">no</span>${treeHTML(n.no, x, hit && !yes)}</div></div></div>`;
+  if (!n.f) return `<div class="tnode${hit ? ' hit' : ''}"><b class="mono">${pct(n.rate, 0)}</b> didn't repay<br><span class="tiny muted">${fmt(n.n)} people</span></div>`;
+  const yes = (x[n.f] == null ? FL[n.f].median : x[n.f]) <= n.t;
+  return `<div class="tree"><div class="tnode q${hit ? ' hit' : ''}">${FL[n.f].label} at most <b class="mono">${fmtFeat(n.f, n.t)}</b>?</div><div class="tbranch"><div><span class="tlabel">yes</span>${treeHTML(n.y, x, hit && yes)}</div><div><span class="tlabel">no</span>${treeHTML(n.no, x, hit && !yes)}</div></div></div>`;
 }
-
-const MODELS = [
-  {grp: 'In production (v1)', k: 'logreg', name: 'Logistic regression', tag: ['info', 'Marvin\'s v1']},
-  {grp: 'Challengers', k: 'ebm', name: 'EBM', tag: ['ok', 'Best challenger']},
-  {grp: 'Challengers', k: 'xgb', name: 'XGBoost', tag: ['warn', 'Accuracy ceiling']},
-  {grp: 'Building blocks', k: 'tree', name: 'Decision tree', tag: ['neutral', 'Brick']},
-  {grp: 'Building blocks', k: 'forest', name: 'Random forest', tag: ['neutral', 'Second opinion']},
-  {grp: 'Considered, not used', k: 'linreg', name: 'Linear regression', tag: ['bad', 'Wrong tool']},
-  {grp: 'Considered, not used', k: 'svm', name: 'Support vector machine', tag: ['bad', 'No']},
-  {grp: 'Considered, not used', k: 'mlp', name: 'Neural network', tag: ['warn', 'Later']},
-  {grp: 'Considered, not used', k: 'genai', name: 'Jev and LLMs', tag: ['warn', 'Around it, not in it']},
-  {grp: 'For marketing', k: 'kmeans', name: 'K-means clustering', tag: ['info', 'Segments']},
-];
-let mSel = 'logreg', lossY = 1, lossP = 0.10;
-function renderModel(keepScroll) {
-  const list = $('#mlist'); list.innerHTML = ''; let grp = '';
-  MODELS.forEach(m => { if (m.grp !== grp) { grp = m.grp; list.append(el('div', {class: 'grp'}, grp)); } const b = el('button', {'aria-pressed': String(m.k === mSel)}, `<b>${m.name}</b><span class="chip ${m.tag[0]}">${m.tag[1]}</span>`); b.onclick = () => { mSel = m.k; symSel = null; renderModel(); }; list.append(b); });
-  const host = $('#mdetail'); host.innerHTML = (VIEW_FN[mSel] || (() => ''))();
-  (AFTER[mSel] || (() => {}))();
+function walk(n, x) { while (n.f) n = (x[n.f] == null ? FL[n.f].median : x[n.f]) <= n.t ? n.y : n.no; return n.rate; }
+function curveChart(host, f) {
+  const t = D.ebm.terms.find(x => x.f === f), [lo, hi] = rng(f), p2 = [];
+  for (let i = 0; i <= t.cuts.length; i++) { const a = i === 0 ? lo : Math.max(lo, t.cuts[i - 1]), b = i === t.cuts.length ? hi : Math.min(hi, t.cuts[i]); if (b <= a) continue; p2.push([a, t.scores[i + 1] * 100], [b, t.scores[i + 1] * 100]); }
+  const r = LRW.find(q => q.f === f), lin = [[lo, r.w * (lo - r.avg) * 100], [hi, r.w * (hi - r.avg) * 100]], ys = p2.concat(lin).map(p => p[1]), wv = Math.max(lo, Math.min(hi, W[f]));
+  lineChart(host, [{pts: lin, color: '--c1', dash: true, end: [wv, r.w * (wv - r.avg) * 100]}, {pts: p2, color: '--c3', end: [wv, t.scores[ebmIdx(t, W[f])] * 100]}], {xMin: lo, xMax: hi, yMin: Math.min(0, ...ys) - 5, yMax: Math.max(0, ...ys) + 5, xLab: FL[f].label, xFmt: v => fmtFeat(f, v), yFmt: v => (v >= 0 ? '+' : '') + v.toFixed(0), h: 200});
 }
-const pts = v => sgn(v * 100, 0);
-const VIEW_FN = {
-  logreg: () => {
-    const r = lrScore(W), e = econ(), Mg = e.M, Ls = e.Lo, c = Mg / (Mg + Ls), d = decision(r.p, bestCut('logreg', e).c);
-    const rows = LRW.map(q => ({...q, x: W[q.f] == null ? q.med : W[q.f], c: r.contrib[q.f]})).sort((a, b) => Math.abs(b.c) - Math.abs(a.c));
-    return `<div class="btnrow" style="justify-content:space-between"><h2>Logistic regression</h2><span class="chip info">Marvin's v1 · production</span></div>
-    <p><b>In one sentence:</b> every feature is a piece of evidence that pushes the odds of default up or down; add up the evidence and convert it into a percentage.</p>
-    <p class="analogy">A points card at a driving test. Each answer earns or loses points; add them up; compare with the pass mark. The card itself (features and their weights) is the whole model, so it can be printed and shown in court.</p>
+let lossY = 1, lossP = 0.10, ladP = null, linLate = 60, giniQ = 27;
+const late = () => LRW.find(q => q.f === 'LATE_SHARE');
+const opened = new Set(), answered = {};
+const open = id => opened.has(id) ? ' open' : '';
 
-    <div class="sub"><h3>Step 1: add up her risk points</h3>
-      <div class="fx"><span class="lbl">Formula</span><div class="eq">${sym('z')} = ${sym('z0')} + ${sym('sum')} ${sym('w')} × ( ${sym('x')} − ${sym('xbar')} )</div>
-      <div class="withnum">In words: start at the average applicant, then for each feature add "weight × how far she is from average".</div>
-      <div class="withnum">Wanjiku: ${sym('z')} = ${pts(r.base)} ${rows.slice(0, 3).map(q => `${q.c >= 0 ? '+' : '−'} ${Math.abs(q.c * 100).toFixed(0)}`).join(' ')} … = <b>${pts(r.z)} points</b></div>${symBox()}</div>
-      <p class="small muted">This table <b>is</b> the model. Points are shown ×100 for readability.</p>
-      <div class="scroll"><table><thead><tr><th>Feature</th><th class="num">Her value x</th><th class="num">Average x̄</th><th class="num">Weight w<small>points per unit</small></th><th>What the weight means</th><th class="num">Her points<small>w × (x − x̄)</small></th></tr></thead><tbody>
-        <tr><td>Start: average applicant</td><td></td><td></td><td></td><td class="small muted">${pct(sig(r.base))} risk</td><td class="num">${pts(r.base)}</td></tr>
-        ${rows.map(q => { const [u, ul] = UNIT[q.f], om = Math.exp(q.w * u), flag = EXPECT[q.f] && Math.sign(q.w) !== EXPECT[q.f]; return `<tr><td>${FL[q.f].label}${flag ? ' <span class="chip warn" title="Points the opposite way to business sense: usually caused by overlapping features">check sign</span>' : ''}</td><td class="num">${fmtFeat(q.f, q.x)}</td><td class="num muted">${fmtFeat(q.f, q.avg)}</td><td class="num">${(q.w * u * 100).toFixed(1)}<small class="muted"> /${ul.replace(/^\+/, '')}</small></td><td class="small">${ul} → odds ×${om.toFixed(2)}</td><td class="num" style="color:var(${q.c >= 0 ? '--bad' : '--ok'})">${pts(q.c)}</td></tr>`; }).join('')}
-        <tr class="total"><td>Total risk points z</td><td></td><td></td><td></td><td></td><td class="num">${pts(r.z)}</td></tr></tbody></table></div>
-    </div>
-
-    <div class="sub"><h3>Step 2: turn points into a percentage</h3>
-      <div class="fx"><span class="lbl">Formula</span><div class="eq">${sym('p')} = 1 ÷ ( 1 + ${sym('e')}<sup>−${sym('z')}</sup> )</div>
-      <div class="withnum">Wanjiku: ${sym('p')} = 1 ÷ (1 + e<sup>${(-r.z).toFixed(2)}</sup>) = 1 ÷ (1 + ${Math.exp(-r.z).toFixed(2)}) = <b>${pct(r.p)}</b></div>${symBox()}</div>
-      <div id="sigPlot"></div>
-    </div>
-
-    <div class="sub"><h3>Step 3: decide</h3>
-      <div class="fx"><span class="lbl">Rule</span><div class="eq">decline if ${sym('p')} ≥ ${sym('c')} = ${sym('Mg')} ÷ ( ${sym('Mg')} + ${sym('Ls')} )</div>
-      <div class="withnum">c = ${fmt(Mg)} ÷ (${fmt(Mg)} + ${fmt(Ls)}) = ${pct(c)} &nbsp;·&nbsp; her ${pct(r.p)} → <b>${d[1]}</b></div>${symBox()}</div>
-    </div>
-
-    <div class="sub"><h3>Why that S-shaped curve? It's not arbitrary.</h3>
-      <p class="small">A sum of points can be any number, but a chance must sit between 0% and 100%. So we work in <b>odds</b> (like bookmakers), then take the log. Drag the probability:</p>
-      <input type="range" id="ladIn" min="1" max="99" value="${Math.max(1, Math.min(99, Math.round(r.p * 100)))}" aria-label="Probability">
-      <div class="ladder" id="ladder"></div>
-      <p class="small">Log-odds run from minus infinity to plus infinity, the same range as a sum of points. So logistic regression <b>models the log-odds as a sum</b>, and the S-curve is just that conversion run backwards. And because evidence <b>multiplies</b> odds ("late payer: odds ×1.13"), adding on the log scale is exactly right: adding logs = multiplying odds.</p>
-    </div>
-
-    <div class="sub"><h3>How it learns the weights</h3>
-      <p class="small"><b>1. Score every guess against what really happened.</b> Pick an outcome and a prediction:</p>
-      <div class="btnrow"><button class="btn" data-ly="1" aria-pressed="${lossY === 1}">She didn't repay (y = 1)</button><button class="btn" data-ly="0" aria-pressed="${lossY === 0}">She repaid (y = 0)</button></div>
-      <label class="field">Model's prediction: <span class="mono" id="lossPl"></span><input type="range" id="lossP" min="1" max="99" value="${Math.round(lossP * 100)}"></label>
-      <div class="fx"><span class="lbl">Penalty (log-loss)</span><div class="eq">${sym('loss')} = −[ ${sym('y')}·log ${sym('p')} + (1 − ${sym('y')})·log(1 − ${sym('p')}) ]</div><div class="withnum" id="lossNum"></div>${symBox()}</div>
-      <div id="lossPlot"></div>
-      <p class="small"><b>2. Nudge every weight to reduce the total penalty</b> over all 246,000 past borrowers:</p>
-      <div class="fx"><span class="lbl">Update rule</span><div class="eq">${sym('w')} ← ${sym('w')} − ${sym('lr')} × ( ${sym('p')} − ${sym('y')} ) × ${sym('x')}</div><div class="withnum" id="updNum"></div>${symBox()}</div>
-      <p class="small"><b>3. Repeat until the weights stop moving.</b> This bowl-shaped penalty has exactly <b>one</b> lowest point, so the same data always gives the same weights: reproducible and auditable.</p>
-    </div>
-
-    <div class="proscons"><div><h4 style="color:var(--ok)">Good at</h4><ul class="clean small"><li>The weights table is the whole model: defensible in court</li><li>Honest percentages straight out</li><li>Same data → same model, every time</li><li>Microseconds to score; banks have used it for decades</li></ul></div><div><h4 style="color:var(--bad)">Weak at</h4><ul class="clean small"><li>Each feature can only push in a straight line</li><li>Overlapping features can flip a weight's sign (flagged above)</li><li>Misses combinations unless hand-built</li></ul></div></div>
-    <p><b>On our data:</b> ranking score ${M.logreg.auc.toFixed(3)}. <b>Verdict:</b> v1 in production and the permanent fallback. Fix any sign flips and add banded features before launch.</p>`;
-  },
-  ebm: () => {
-    const r = ebmScore(W), rows = FEAT.map(f => [f, r.contrib[f]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-    return `<div class="btnrow" style="justify-content:space-between"><h2>EBM: Explainable Boosting Machine</h2><span class="chip ok">Best challenger</span></div>
-    <p><b>In one sentence:</b> the same points card as logistic regression, but each feature's points come from a <b>learned curve</b> instead of a straight line.</p>
-    <p class="small muted">A real, open-source model from Microsoft Research (InterpretML, 2019), built on peer-reviewed work by Rich Caruana and colleagues. Used in finance and healthcare where every decision must be justified.</p>
-    <p class="analogy">Same driving-test points card. But instead of "−5 points per year of experience, always", each question's points table was drawn by studying 246,000 past drivers. Year one matters a lot; year twenty barely.</p>
-    <div class="sub"><h3>The formula, live</h3>
-      <div class="fx"><span class="lbl">Formula</span><div class="eq">${sym('z')} = ${sym('z0')} + ${sym('f', 'f₁(x₁)')} + ${sym('f', 'f₂(x₂)')} + … + ${sym('f', 'f₁₅(x₁₅)')} &nbsp;→&nbsp; ${sym('p')} = 1 ÷ (1 + ${sym('e')}<sup>−${sym('z')}</sup>)</div>
-      <div class="withnum">Wanjiku: ${pts(r.base)} ${rows.slice(0, 3).map(([, c]) => `${c >= 0 ? '+' : '−'} ${Math.abs(c * 100).toFixed(0)}`).join(' ')} … = <b>${pts(r.z)} points → ${pct(r.p)}</b></div>${symBox()}</div>
-      <p class="small"><b>Logistic vs EBM on the same feature.</b> Dashed blue: logistic's straight line. Green: EBM's learned curve. The dots are Wanjiku. Move her sliders above.</p>
-      <div class="legend"><span><i style="background:var(--s1)"></i>logistic (straight)</span><span><i style="background:var(--s3)"></i>EBM (learned curve)</span></div>
-      <div class="grid3">${['LATE_SHARE', 'BUREAU_SCORE_3', 'YEARS_EMPLOYED'].map(f => `<div id="cv-${f}"></div>`).join('')}</div>
-      <div class="scroll"><table><thead><tr><th>Feature</th><th class="num">Her value</th><th class="num">Points from its curve</th></tr></thead><tbody><tr><td>Start</td><td></td><td class="num">${pts(r.base)}</td></tr>${rows.map(([f, c]) => `<tr><td>${FL[f].label}</td><td class="num">${fmtFeat(f, W[f])}</td><td class="num" style="color:var(${c >= 0 ? '--bad' : '--ok'})">${pts(c)}</td></tr>`).join('')}<tr class="total"><td>Total</td><td></td><td class="num">${pts(r.z)} → ${pct(r.p)}</td></tr></tbody></table></div>
-    </div>
-    <div class="sub"><h3>How it learns the curves</h3><ol class="howto small">
-      <li><span>Start everyone at the average risk.</span></li>
-      <li><span>Look only at <b>one</b> feature, say "share paid late". Grow a tiny tree on just that feature to fix current mistakes; keep a small slice of its correction.</span></li>
-      <li><span>Move to the next feature and do the same. Cycle through all 15.</span></li>
-      <li><span>Repeat the cycle thousands of times. Each feature's small corrections pile up into its own curve.</span></li>
-      <li><span>Score = start + one value read off each curve. Exactly additive, so the reasons are exact.</span></li></ol></div>
-    <div class="proscons"><div><h4 style="color:var(--ok)">Good at</h4><ul class="clean small"><li>Exact reasons, like logistic</li><li>Captures curves logistic can't</li><li>Accuracy tied with XGBoost on our data</li><li>Every curve can be printed and reviewed</li></ul></div><div><h4 style="color:var(--bad)">Weak at</h4><ul class="clean small"><li>A table of curves, not one weight per feature: a different kind of explanation for lawyers</li><li>Slower to train (minutes, not seconds)</li></ul></div></div>
-    <p><b>On our data:</b> ranking score ${M.ebm.auc.toFixed(3)} vs logistic ${M.logreg.auc.toFixed(3)}. <b>Verdict:</b> challenger to v1. Promote if it wins on profit on Doris data and legal accepts curve-based explanations.</p>`;
-  },
-  xgb: () => {
-    const ks = [0, 1, 10, 50, 100, 250, 500]; let z = D.xgb.base_margin; const vals = {0: sig(z)}; D.xgb.trees.forEach((t, i) => { z += leaf(t, W); if (ks.includes(i + 1)) vals[i + 1] = sig(z); });
-    return `<div class="btnrow" style="justify-content:space-between"><h2>XGBoost</h2><span class="chip warn">Accuracy ceiling</span></div>
-    <p><b>In one sentence:</b> 500 small decision trees in a relay, each one correcting the mistakes the earlier ones left behind. XGBoost = eXtreme Gradient Boosting (Tianqi Chen, 2014).</p>
-    <p class="analogy">A relay of tutors. The first marks the exam; the second only studies the questions the class still got wrong; the third studies what's still wrong after that.</p>
-    <div class="sub"><h3>The formula, live</h3>
-      <div class="fx"><span class="lbl">Formula</span><div class="eq">${sym('z')} = ${sym('F0')} + ${sym('eta')}·${sym('fm', 'f₁(x)')} + ${sym('eta')}·${sym('fm', 'f₂(x)')} + … + ${sym('eta')}·${sym('fm', 'f₅₀₀(x)')}</div>
-      <div class="withnum">Wanjiku's risk as trees are added: ${ks.map(k => `${k === 0 ? 'start' : k}: <b>${pct(vals[k])}</b>`).join(' → ')}</div>${symBox()}</div>
-      <p class="small">Across all ${fmt(D.meta.test)} test loans, the ranking score climbs as trees are added:</p><div id="boostChart"></div></div>
-    <div class="sub"><h3>How it learns</h3><ol class="howto small"><li><span>Everyone starts at 8%.</span></li><li><span>Find the mistakes: defaulters scored low, payers scored high.</span></li><li><span>Grow a small tree (up to 4 questions) whose only job is fixing those mistakes.</span></li><li><span>Keep only 5% of its correction (the learning rate η). Small steps generalise better.</span></li><li><span>Repeat 500 times. Rules keep it sensible: more late payments can never lower risk.</span></li></ol></div>
-    <div class="proscons"><div><h4 style="color:var(--ok)">Good at</h4><ul class="clean small"><li>Top accuracy on tables of data</li><li>Finds combinations by itself</li></ul></div><div><h4 style="color:var(--bad)">Weak at</h4><ul class="clean small"><li>500 trees can't be printed for a court</li><li>Reasons must be estimated after the fact (SHAP)</li></ul></div></div>
-    <p><b>On our data:</b> ${M.xgb.auc.toFixed(3)}, a tie with EBM. <b>Verdict:</b> benchmark only. It shows how much accuracy the glass-box models leave on the table (here: almost none).</p>`;
-  },
-  tree: () => `<h2>Decision tree</h2>
-    <p><b>In one sentence:</b> a flowchart of yes/no questions, each chosen to split payers from defaulters as cleanly as possible.</p>
-    <p class="analogy">The game "20 questions".</p>
-    <div class="sub"><h3>A real tree learned from ${fmt(D.meta.train)} loans</h3><p class="small">Wanjiku's path is highlighted and moves with her sliders.</p>${treeHTML(D.teach.tree, W)}</div>
-    <div class="sub"><h3>How it picks a question</h3>
-      <div class="fx"><span class="lbl">Messiness of a group</span><div class="eq">${sym('G')} = 1 − ${sym('sum')} ${sym('pk')}²</div><div class="withnum" id="giniNum"></div>${symBox()}</div>
-      <label class="field">Share of the group who didn't repay: <span class="mono" id="giniL"></span><input type="range" id="giniIn" min="0" max="100" value="27"></label>
-      <p class="small">The tree tries every feature and cut-off and keeps the question that makes the two resulting groups least messy.</p></div>
-    <p><b>Verdict:</b> readable but unstable and rough on its own. It's the brick that forests and boosting are built from.</p>`,
-  forest: () => `<h2>Random forest</h2>
-    <p><b>In one sentence:</b> 300 trees, each trained on a random slice of the data, then their answers averaged ("bagging").</p>
-    <p class="analogy">Ask 300 loan officers who each saw different files, then take the average opinion. Individual mistakes cancel out.</p>
-    <div class="fx"><span class="lbl">Formula</span><div class="eq">${sym('p')} = (1 ÷ 300) × ${sym('sum')} tree<sub>b</sub>(x)</div>${symBox()}</div>
-    <p class="small">One tree reaches ${D.teach.forest_curve[0][1].toFixed(3)}; averaging 300 reaches ${D.teach.forest_curve.at(-1)[1].toFixed(3)}.</p><div id="forestChart"></div>
-    <p><b>Verdict:</b> a solid second opinion, beaten by boosting, and hard to explain.</p>`,
-  linreg: () => `<h2>Linear regression</h2>
-    <p><b>In one sentence:</b> fits a straight line to predict an <b>amount</b>, like next month's spending.</p>
-    <p class="analogy">Laying a ruler through a cloud of dots.</p>
-    <div class="fx"><span class="lbl">Formula</span><div class="eq">ŷ = β₀ + β₁x₁ + … + β<sub>p</sub>x<sub>p</sub></div><div class="withnum">No squashing step, so the answer can be −20% or 130%. Not a valid chance.</div></div>
-    <p><b>Verdict:</b> right for revenue forecasts per segment, wrong for the lending decision. Logistic regression is the yes/no version of the same idea.</p>`,
-  svm: () => `<h2>Support vector machine</h2>
-    <p><b>In one sentence:</b> draws the boundary between payers and defaulters with the widest empty gap on each side (the "hyperplane" algorithm).</p>
-    <p class="analogy">Building the widest road possible between two villages.</p>
-    <div class="fx"><span class="lbl">Formula</span><div class="eq">boundary: w·x + b = 0 &nbsp; widest gap = 2 ÷ ‖w‖</div></div>
-    <p><b>On our data:</b> ${M.svm.auc.toFixed(3)}, the same as logistic, but it gives no percentage without an extra step and no weights a court can read. <b>Verdict:</b> no.</p>`,
-  mlp: () => `<h2>Neural network</h2>
-    <p><b>In one sentence:</b> layers of tiny points cards feeding into each other. Brilliant on images, text and long sequences.</p>
-    <p class="analogy">A committee of committees, each summarising the one before.</p>
-    <p><b>On our data:</b> ${M.mlp.auc.toFixed(3)}, below EBM and XGBoost, and unexplainable. <b>Verdict:</b> not for the decision. Later, a sequence model could read raw M-PESA histories and hand <i>new features</i> to the glass-box model.</p>`,
-  genai: () => `<h2>Jev and LLMs: where modern AI fits</h2>
-    <p><b>Jev</b> (jevai.net) is a hosted "decision model" API: you send text or an image plus the shape of the answer you want, and it returns a typed decision, a score and a confidence. It's built for classifying, routing, scoring and extracting, and is trained to give honest confidence values. Also considered: big language models such as Google's <b>Gemini 4 Argon</b>.</p>
-    <div class="scroll"><table><thead><tr><th>Option</th><th>What it does</th><th>Make the loan decision?</th><th>Useful around it?</th></tr></thead><tbody>
-      <tr><td><b>Logistic / EBM</b></td><td>Adds up evidence from a table of features</td><td><span class="chip ok">Yes</span> ~1–3 ms, same answer every time, weights you can show in court</td><td>—</td></tr>
-      <tr><td><b>Jev</b></td><td>Hosted API: input + answer schema → typed decision, score, confidence</td><td><span class="chip bad">No</span> customer M-PESA data would leave Safaricom; it returns a confidence, not feature weights a court can read; the vendor changes the model between versions</td><td><span class="chip ok">Yes</span> messy-text jobs: categorising merchant names, routing tickets, reading documents. Its interface (input + schema → decision + score) is also the right shape for our own Decision API</td></tr>
-      <tr><td><b>LLM</b> (Gemini, Claude…)</td><td>Reads and writes text</td><td><span class="chip bad">No</span> seconds per answer, costly, can vary between runs, no weights to defend</td><td><span class="chip ok">Yes</span> turn reason codes into customer letters; analyst chat (Zuri CI already does this)</td></tr>
-    </tbody></table></div>
-    <p class="say">Fast, defensible decisions come from a small glass-box model. Modern AI sits around it, making better features and better explanations, never as the unexplainable decision-maker.</p>`,
-  kmeans: () => { const P = D.segments.profiles; return `<h2>K-means clustering</h2>
-    <p><b>In one sentence:</b> no "right answer" to learn from; it just groups similar people. For targeting, not lending.</p>
-    <p class="analogy">Placing K shops so every customer is close to one.</p>
-    <ol class="howto small"><li><span>Choose K groups.</span></li><li><span>Drop K centres at random.</span></li><li><span>Assign everyone to the nearest centre.</span></li><li><span>Move each centre to the middle of its group. Repeat until stable.</span></li></ol>
-    <p class="small">On our data it found ${D.segments.k} groups. Default rates per group: ${P.map(s => pct(s.default)).join(', ')}. On Safaricom data this runs on ward totals (15+ people), never individuals.</p>`; },
+const LESSONS = {
+  logreg: {name: 'Logistic regression', grp: 'Goes live first', tag: ['info', 'Marvin\'s v1'], slip: 'logreg',
+    what: 'A points card. Every fact about the applicant adds or removes risk points. The points are added up and turned into a chance between 0% and 100%. The card itself, a list of features and their weights, is the entire model.',
+    picture: 'A driving-test points card. Each answer earns or loses points. Add them up and compare with the pass mark.',
+    steps: ['Everyone starts with the same points: those of an average applicant.', 'Each fact moves the total. Paying late adds points. A good outside score removes points.', 'Add everything up.', 'Turn the total into a chance with an S-shaped curve: very low totals give nearly 0%, very high totals nearly 100%.', 'Compare the chance with our line and decide.'],
+    maths: () => { const r = lrScore(W), L = late(), e = econ(), c = e.M / (e.M + e.Lo), lc = L.w * (W.LATE_SHARE - L.avg);
+      return `<p><b>Formula 1: add up her points.</b></p>` + fx(`${sym('z', 'z')} = ${sym('b', 'b')} + ${sym('S', 'Σ')} ${sym('w', 'w')} × ( ${sym('x', 'x')} − ${sym('a', 'x̄')} )`, `one feature, "share paid late": ${(L.w * 100).toFixed(0)} × (${W.LATE_SHARE.toFixed(2)} − ${L.avg.toFixed(2)}) = <b>${pts(lc)} points</b> &nbsp;·&nbsp; all 15 added to the start: <b>z = ${pts(r.z)}</b>`, 'In words: start at the average applicant, then for every feature add "its weight × how far she is from average".')
+      + legend([['z', 'z', 'Her total risk points. Can be any number.', pts(r.z)], ['b', 'b', 'The starting points every applicant gets.', pts(r.base)], ['S', 'Σ', '"Add up, for every feature." All 15 of them.', '15 features'], ['w', 'w', 'The weight: how many points one unit of this feature is worth. Positive raises risk.', `late: ${sgn(L.w * 10, 0)} per 10 points`], ['x', 'x', 'Her value for the feature.', 'late: ' + pct(W.LATE_SHARE, 0)], ['a', 'x̄', 'The average applicant\'s value.', 'late: ' + pct(L.avg, 0)]])
+      + `<p><b>Formula 2: turn points into a chance.</b></p>` + fx(`${sym('p', 'p')} = 1 ÷ ( 1 + ${sym('e', 'e')}<sup>−${sym('z2', 'z')}</sup> )`, `p = ${SQUASH(r.z)} = <b>${pct(r.p)}</b>`) + `<div id="sigPlot"></div>`
+      + legend([['p', 'p', 'Her chance of not repaying.', pct(r.p)], ['e', 'e', 'A fixed number, about 2.718. Nothing to choose here.', '2.718'], ['z2', 'z', 'Her total from formula 1 (points ÷ 100).', (r.z).toFixed(2)]])
+      + `<p><b>Formula 3: decide.</b></p>` + fx(`say no when ${sym('p3', 'p')} ≥ ${sym('c', 'c')} &nbsp;&nbsp; where ${sym('c', 'c')} = fee ÷ ( fee + loss )`, `c = ${fmt(e.M)} ÷ (${fmt(e.M)} + ${fmt(e.Lo)}) = ${pct(c)} &nbsp;·&nbsp; her p = ${pct(r.p)}`)
+      + legend([['p3', 'p', 'Her chance from formula 2.', pct(r.p)], ['c', 'c', 'The line. Comes from money, not from the model.', pct(c)]]); },
+    example: () => { const r = lrScore(W); return pointsTable(r) + `<details class="deep" data-d="lr-all"${open('lr-all')}><summary>The full weights table (this is the whole model)</summary><div><p class="small muted">Each weight reads as a sentence about the odds. "Check" marks a weight that points the wrong way for business sense, usually because two features overlap. Worth checking in any logistic model before it goes to a regulator.</p><div class="scroll"><table><thead><tr><th>Feature</th><th>What its weight says</th><th class="n">Her points</th></tr></thead><tbody>${LRW.map(q => ({...q, c: r.contrib[q.f]})).sort((a, b) => Math.abs(b.c) - Math.abs(a.c)).map(q => { const [u, ul] = UNIT[q.f], om = Math.exp(q.w * u), flag = EXPECT[q.f] && Math.sign(q.w) !== EXPECT[q.f]; return `<tr><td>${FL[q.f].label}${flag ? ' <span class="chip warn">check</span>' : ''}</td><td class="small">${ul}: odds ${om >= 1 ? 'up ' + ((om - 1) * 100).toFixed(0) : 'down ' + ((1 - om) * 100).toFixed(0)}%</td><td class="n">${pts(q.c)}</td></tr>`; }).join('')}</tbody></table></div></div></details>`
+      + `<details class="deep" data-d="lr-odds"${open('lr-odds')}><summary>Why that S-curve? Because of odds</summary><div><p class="small">A sum of points can be any number, but a chance must stay between 0% and 100%. So we switch to <b>odds</b>, like a bookmaker, then take the log. Drag:</p><input type="range" id="ladIn" min="1" max="99" value="${ladP ?? Math.max(1, Math.min(99, Math.round(r.p * 100)))}" aria-label="Chance"><div class="cols3" id="ladder"></div><p class="small">The third box has no limits, just like a sum of points. So the model adds points on that scale, and the S-curve is the trip back to a chance. Evidence multiplies odds ("pays late: odds up 13%"), and multiplying odds is the same as adding logs. That is why adding points is the right thing to do.</p></div></details>`
+      + `<details class="deep" data-d="lr-learn"${open('lr-learn')}><summary>How it learns the weights</summary><div><p class="small"><b>1. Score each guess against what happened.</b> A confident wrong guess gets a big penalty.</p><div class="btnrow"><button class="btn" data-ly="1" aria-pressed="${lossY === 1}">She didn't repay</button><button class="btn" data-ly="0" aria-pressed="${lossY === 0}">She repaid</button></div><label class="field">The model had said: <span class="mono" id="lossPl"></span><input type="range" id="lossP" min="1" max="99" value="${Math.round(lossP * 100)}"></label><div class="fx"><div class="eq">penalty = −log( the chance it gave to what really happened )</div><div class="live" id="lossNum"></div></div><p class="small"><b>2. Nudge every weight</b> a little in the direction that shrinks the total penalty across all ${fmt(D.meta.train)} past loans.</p><div class="fx"><div class="eq">new weight = old weight − step × ( predicted − actual ) × her value</div><div class="live" id="updNum"></div></div><p class="small"><b>3. Repeat until nothing moves.</b> There is exactly one best set of weights, so the same data always gives the same model. That makes it easy to audit.</p></div></details>`; },
+    after: () => { const r = lrScore(W), W2 = 520, H = 140, P = 30, X = v => P + (v + 6) / 12 * (W2 - 2 * P), Y = v => H - P - v * (H - 2 * P); let path = ''; for (let t = -6; t <= 6.001; t += .1) path += (path ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(sig(t)).toFixed(1); const zc = Math.max(-6, Math.min(6, r.z));
+      $('#sigPlot').innerHTML = `<svg viewBox="0 0 ${W2} ${H}" width="100%" style="max-width:560px" role="img" aria-label="S-curve"><line class="axis" x1="${P}" y1="${Y(0)}" x2="${W2 - P}" y2="${Y(0)}"/><path d="${path}" fill="none" stroke="${css('--sym')}" stroke-width="2"/><circle cx="${X(zc)}" cy="${Y(sig(zc))}" r="5.5" fill="${css('--c2')}"/><text x="${P}" y="${H - 10}">−600 points → 0%</text><text x="${W2 - P}" y="${H - 10}" text-anchor="end">+600 points → 100%</text><text x="${Math.min(X(zc) + 10, W2 - 150)}" y="${Math.max(Y(sig(zc)) - 10, 14)}" style="fill:${css('--ink')}">Wanjiku ${pts(r.z)} → ${pct(r.p)}</text></svg>`;
+      const lad = () => { ladP = +$('#ladIn').value; const p = ladP / 100, o = p / (1 - p); $('#ladder').innerHTML = `<div class="rung"><span class="tiny muted">Chance · 0 to 1</span><span class="v">${pct(p, 0)}</span><span class="tiny">${ladP} in 100 don't repay</span></div><div class="rung"><span class="tiny muted">Odds · 0 to no limit</span><span class="v">${o < 1 ? '1 to ' + (1 / o).toFixed(1) : o.toFixed(1) + ' to 1'}</span><span class="tiny">non-payers to payers</span></div><div class="rung"><span class="tiny muted">Log of odds · no limits</span><span class="v">${pts(Math.log(o))}</span><span class="tiny">risk points</span></div>`; };
+      if ($('#ladIn')) { $('#ladIn').oninput = lad; lad(); }
+      const loss = () => { lossP = $('#lossP').value / 100; $('#lossPl').textContent = pct(lossP, 0) + ' chance of not repaying'; const q = lossY ? lossP : 1 - lossP, L = -Math.log(q);
+        $('#lossNum').innerHTML = `−log(${q.toFixed(2)}) = <b>${L.toFixed(2)}</b> ${L > 2 ? '· confident and wrong: big penalty' : L < .3 ? '· about right: small penalty' : ''}`;
+        const ch = -0.1 * (lossP - lossY) * 0.40; $('#updNum').innerHTML = `her "paid late" = 0.40: change = −0.1 × (${lossP.toFixed(2)} − ${lossY}) × 0.40 = <b>${sgn(ch, 3)}</b> · the late-payment weight goes ${ch > 0 ? 'up' : 'down'}`; };
+      if ($('#lossP')) { $$('[data-ly]').forEach(b => b.onclick = () => { lossY = +b.dataset.ly; $$('[data-ly]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.ly === lossY))); loss(); }); $('#lossP').oninput = loss; loss(); } },
+    good: ['The weights table is the whole model: it can be printed and defended in court', 'Its percentages can be trusted as they are', 'Same data, same model, every time', 'Answers in a fraction of a millisecond'],
+    bad: ['Each fact can only push in a straight line: twice as late always means twice the points', 'Overlapping facts can make a weight point the wrong way', 'Misses combinations such as "young and new phone line"'],
+    verdict: 'Goes live first, and stays forever as the fallback.',
+    quiz: {q: 'Marvin asks: "A declined customer sues. What do we show the judge?"', a: ['The weights table: each feature, its weight, and how many points it added for this customer', 'The model\'s overall accuracy score', 'Nothing, the model is confidential'], right: 0, why: 'Every decision is the start value plus weight × value for each feature. It can be recomputed by hand.'}},
+  ebm: {name: 'EBM', grp: 'Challengers', tag: ['ok', 'Best challenger'], slip: 'ebm',
+    what: 'EBM stands for Explainable Boosting Machine, an open-source model from Microsoft Research (InterpretML, 2019). It is still a points card. The difference: each fact\'s points are read off a <b>curve the model learned</b>, instead of a straight line.',
+    picture: 'The same points card, but each question\'s points table was drawn by studying hundreds of thousands of past borrowers. The first year in a job matters a lot. The twentieth barely.',
+    steps: ['Start everyone at the average.', 'Look at one fact only, say "share paid late". Fix a little of the current error using only that fact.', 'Move to the next fact and do the same. Go round all 15.', 'Repeat thousands of rounds. Each fact\'s small fixes pile up into its own curve.', 'To score someone: look up her value on each curve, add the points, turn the total into a chance.'],
+    maths: () => { const r = ebmScore(W), t = D.ebm.terms.find(x => x.f === 'LATE_SHARE');
+      return fx(`${sym('z', 'z')} = ${sym('b', 'b')} + ${sym('f', 'f₁(x₁)')} + ${sym('f', 'f₂(x₂)')} + … + ${sym('f', 'f₁₅(x₁₅)')} &nbsp;&nbsp;then&nbsp;&nbsp; ${sym('p', 'p')} = 1 ÷ (1 + e<sup>−z</sup>)`, `z = <b>${pts(r.z)}</b> &nbsp;·&nbsp; p = ${SQUASH(r.z)} = <b>${pct(r.p)}</b>`, 'In words: start at the average, add one number read off each fact\'s curve, then turn the total into a chance exactly as before.')
+      + legend([['z', 'z', 'Her total risk points.', pts(r.z)], ['b', 'b', 'Starting points for everyone.', pts(r.base)], ['f', 'f(x)', 'The learned curve for one fact. Find her value on it, read off the points.', `late ${pct(W.LATE_SHARE, 0)} → ${pts(t.scores[ebmIdx(t, W.LATE_SHARE)])}`], ['p', 'p', 'Her chance of not repaying.', pct(r.p)]]); },
+    example: () => `<p>Dashed blue is logistic regression's straight line. Green is the curve EBM learned. The dots are Wanjiku. Move her sliders and watch where the two disagree.</p><div class="legendrow"><span><i style="background:var(--c1)"></i>logistic: straight line</span><span><i style="background:var(--c3)"></i>EBM: learned curve</span></div><div class="cols3">${['LATE_SHARE', 'BUREAU_SCORE_3', 'YEARS_EMPLOYED'].map(f => `<div id="cv-${f}"></div>`).join('')}</div>` + pointsTable(ebmScore(W)),
+    after: () => ['LATE_SHARE', 'BUREAU_SCORE_3', 'YEARS_EMPLOYED'].forEach(f => curveChart($('#cv-' + f), f)),
+    good: ['Reasons are exact, like logistic regression', 'Captures bends that a straight line misses', 'Ranked risk as well as XGBoost on our test', 'Every curve can be printed and reviewed'],
+    bad: ['The explanation is a set of curves, not one weight per feature: legal has to accept that', 'Takes minutes to train, not seconds'],
+    verdict: 'The challenger. It replaces v1 only if it makes more money on Doris data and legal is comfortable with curves.',
+    quiz: {q: 'What is the one real difference between EBM and logistic regression?', a: ['EBM uses a neural network inside', 'Each fact\'s points come from a learned curve instead of a straight line', 'EBM cannot explain its decisions'], right: 1, why: 'Both add points per fact and turn the total into a chance. Only the shape of each fact\'s contribution differs.'}},
+  xgb: {name: 'XGBoost', grp: 'Challengers', tag: ['warn', 'Yardstick'], slip: 'xgb',
+    what: 'Hundreds of small decision trees built one after another. Each new tree only tries to fix the mistakes the earlier trees left behind. This is called boosting. XGBoost is the standard fast version.',
+    picture: 'A relay of tutors. The first marks the exam. The second studies only the questions the class still gets wrong. The third studies what is still wrong after that.',
+    steps: ['Start everyone at the average risk, about 8%.', 'Find the mistakes: non-payers scored too low, payers scored too high.', 'Grow one small tree whose only job is fixing those mistakes.', 'Keep only a small part of its correction, so no single tree dominates.', 'Repeat 500 times. Add up all the corrections and turn the total into a chance.'],
+    maths: () => { const r = xgbScore(W);
+      return fx(`${sym('z', 'z')} = ${sym('F', 'F₀')} + ${sym('n', 'η')} × ${sym('t', 'tree₁(x)')} + ${sym('n', 'η')} × ${sym('t', 'tree₂(x)')} + … + ${sym('n', 'η')} × ${sym('t', 'tree₅₀₀(x)')}`, `z = <b>${pts(r.z)}</b> &nbsp;·&nbsp; p = ${SQUASH(r.z)} = <b>${pct(r.p)}</b>`, 'In words: start at the average, then add 500 small corrections, each shrunk so it only counts a little.')
+      + legend([['z', 'z', 'Her total risk points, turned into a chance the same way as before.', pts(r.z)], ['F', 'F₀', 'The starting guess for everyone: the average risk.', pct(sig(D.xgb.base_margin), 0)], ['n', 'η', 'How much each tree is trusted. Small steps learn more carefully.', '0.05'], ['t', 'tree(x)', 'One small yes/no flowchart. It outputs a correction for her.', '500 of them']]); },
+    example: () => { const ks = [1, 10, 50, 100, 250, 500]; let z = D.xgb.base_margin; const v = {}; D.xgb.trees.forEach((t, i) => { z += leaf(t, W); if (ks.includes(i + 1)) v[i + 1] = sig(z); });
+      return `<p>Wanjiku's chance as the relay runs:</p><div class="relay"><span>start ${pct(sig(D.xgb.base_margin), 0)}</span>${ks.map(k => `<i>→</i><span>${k} tree${k > 1 ? 's' : ''}: <b>${pct(v[k])}</b></span>`).join('')}</div><p>And across all test loans, the model gets better at ranking risk as trees are added (higher is better):</p><div id="boostChart" style="max-width:600px"></div>`; },
+    after: () => lineChart($('#boostChart'), [{pts: D.teach.boost_curve, color: '--c2', dots: true}], {xMin: 1, xMax: 500, logx: true, xTicks: [1, 3, 10, 25, 50, 100, 250, 500], yMin: .68, yMax: .77, xLab: 'number of trees', yFmt: v => v.toFixed(2), h: 190}),
+    good: ['Usually the most accurate on tables of data', 'Finds combinations of facts by itself'],
+    bad: ['500 trees cannot be printed and read in court', 'Its reasons have to be estimated afterwards with an add-on (SHAP)'],
+    verdict: 'A yardstick, not a production model. It tells us how much accuracy the explainable models give up. On our test: almost none.',
+    quiz: {q: 'Why keep XGBoost around if it won\'t go live?', a: ['It is cheaper to run', 'To measure how much accuracy we lose by insisting on explainable models', 'Regulators require it'], right: 1, why: 'If the explainable model scores close to XGBoost, we know explainability is costing us very little.'}},
+  tree: {name: 'Decision tree', grp: 'Building blocks', tag: ['neutral', 'A brick'],
+    what: 'A flowchart of yes/no questions. Each question is chosen to split people into two groups that differ as much as possible in how often they repay.',
+    picture: 'The game "20 questions".',
+    steps: ['Try every fact and every cut-off as a possible question.', 'Keep the question that separates payers from non-payers best.', 'Repeat inside each of the two groups.', 'Stop when groups get small. Each final box predicts its own group\'s rate.'],
+    maths: () => { const q = giniQ / 100, G = 1 - q * q - (1 - q) * (1 - q);
+      return fx(`${sym('G', 'G')} = 1 − ( ${sym('a', 'p<sub>no</sub>')}² + ${sym('b', 'p<sub>yes</sub>')}² )`, `G = 1 − (${q.toFixed(2)}² + ${(1 - q).toFixed(2)}²) = <b>${G.toFixed(2)}</b>`, 'In words: how mixed is this group? The tree keeps the question that leaves the two new groups least mixed.')
+      + `<label class="field" style="max-width:420px">Share of the group who didn't repay: ${giniQ}%<input type="range" id="giniIn" min="0" max="100" value="${giniQ}"></label>`
+      + legend([['G', 'G', 'Mixedness. 0 means everyone is the same. 0.5 means half and half.', G.toFixed(2)], ['a', 'p no', 'Share of the group who didn\'t repay.', pct(q, 0)], ['b', 'p yes', 'Share who repaid.', pct(1 - q, 0)]]); },
+    example: () => `<p>A real two-question tree learned from our data. Wanjiku's path is highlighted. She lands in a box where <b>${pct(walk(D.teach.tree, W), 0)}</b> didn't repay.</p>${treeHTML(D.teach.tree, W)}`,
+    after: () => { $('#giniIn').oninput = ev => { giniQ = +ev.target.value; renderLesson(); $('#giniIn').focus(); }; },
+    good: ['Reads like a flowchart', 'Finds combinations of facts'], bad: ['Change a few loans and the whole tree changes', 'Everyone in a box gets the same rough answer'],
+    verdict: 'Not used alone. It is the brick that random forests and XGBoost are built from.',
+    quiz: {q: 'What does one decision tree give every person in the same final box?', a: ['A different chance each', 'The same chance: that box\'s past rate', 'No answer'], right: 1, why: 'That roughness is why single trees are combined into forests and boosting.'}},
+  forest: {name: 'Random forest', grp: 'Building blocks', tag: ['neutral', 'Second opinion'],
+    what: 'Hundreds of decision trees, each trained on a different random sample of the past loans. Their answers are averaged. This is called bagging.',
+    picture: 'Ask 300 loan officers who each saw different files, then take the average opinion. Their individual mistakes cancel out.',
+    steps: ['Take a random sample of past loans.', 'Grow a tree on it, letting it choose from only a few random facts at each question.', 'Repeat 300 times so the trees all differ.', 'To score someone, ask every tree and average.'],
+    maths: () => fx(`${sym('p', 'p')} = ( ${sym('t', 'tree₁')} + ${sym('t', 'tree₂')} + … + ${sym('t', 'tree₃₀₀')} ) ÷ ${sym('B', '300')}`, null, 'In words: the average of 300 opinions.') + legend([['p', 'p', 'Her chance of not repaying.', ''], ['t', 'tree', 'One tree\'s opinion of her.', 'each a %'], ['B', '300', 'How many trees we average.', '300']]),
+    example: () => `<p>One tree alone ranks risk at ${D.teach.forest_curve[0][1].toFixed(2)}. Averaging 300 lifts it to ${D.teach.forest_curve.at(-1)[1].toFixed(2)} (1.0 would be perfect, 0.5 a coin flip).</p><div id="forestChart" style="max-width:600px"></div>`,
+    after: () => lineChart($('#forestChart'), [{pts: D.teach.forest_curve, color: '--c5', dots: true}], {xMin: 1, xMax: 300, logx: true, xTicks: [1, 3, 10, 30, 100, 300], yMin: .65, yMax: .76, xLab: 'trees averaged', yFmt: v => v.toFixed(2), h: 190}),
+    good: ['Steady and hard to break'], bad: ['Usually beaten by boosting', '300 trees cannot be read'],
+    verdict: 'A sanity check. Not a candidate.',
+    quiz: {q: 'Forest vs XGBoost: what is the difference in how the trees work together?', a: ['Forest averages independent trees; XGBoost chains trees that fix each other\'s mistakes', 'They are the same', 'Forest uses bigger data'], right: 0, why: 'Averaging is bagging. Chaining corrections is boosting.'}},
+  linreg: {name: 'Linear regression', grp: 'Considered, not used', tag: ['bad', 'Wrong tool'],
+    what: 'Fits a straight line to predict an <b>amount</b>, such as next month\'s spending. It adds weighted facts just like logistic regression, but has no step that keeps the answer between 0% and 100%.',
+    picture: 'Laying a ruler through a cloud of dots.',
+    steps: ['Give each fact a weight.', 'Multiply and add.', 'That sum is the prediction. Nothing stops it going below 0 or above 100%.'],
+    maths: () => fx(`${sym('y', 'ŷ')} = ${sym('b', 'b')} + ${sym('w', 'w₁')}×${sym('x', 'x₁')} + ${sym('w', 'w₂')}×${sym('x', 'x₂')} + …`, null, 'In words: a start value plus weight × value for each fact. Compare with logistic regression: the same sum, minus the S-curve.') + legend([['y', 'ŷ', 'The predicted amount.', ''], ['b', 'b', 'The start value.', ''], ['w', 'w', 'Weight on a fact.', ''], ['x', 'x', 'The fact\'s value.', '']]),
+    example: () => { const v = 5 + 1.3 * linLate; return `<p>A made-up line to show the problem: chance = 5% + 1.3 × share paid late.</p><label class="field" style="max-width:420px">Share paid late: ${linLate}%<input type="range" id="linIn" min="0" max="100" value="${linLate}"></label><p class="mono">5 + 1.3 × ${linLate} = <b style="color:var(${v > 100 ? '--bad' : '--ink'})">${v.toFixed(0)}%</b> ${v > 100 ? '· a chance above 100% is meaningless' : ''}</p>`; },
+    after: () => { $('#linIn').oninput = ev => { linLate = +ev.target.value; renderLesson(); $('#linIn').focus(); }; },
+    good: ['Right for forecasting amounts: revenue per segment, monthly spend'], bad: ['Can output impossible chances'],
+    verdict: 'Not for the lending decision. Logistic regression is the yes/no version of the same idea.',
+    quiz: {q: 'Why can\'t linear regression predict a chance of default?', a: ['It is too slow', 'Its answer isn\'t kept between 0% and 100%', 'It needs more data'], right: 1, why: 'Logistic regression adds the S-curve step that fixes exactly this.'}},
+  svm: {name: 'Support vector machine', grp: 'Considered, not used', tag: ['bad', 'No'],
+    what: 'Draws a boundary between payers and non-payers that leaves the widest possible empty gap on each side. This is the "hyperplane" algorithm.',
+    picture: 'Building the widest road you can between two villages.',
+    steps: ['Plot every past borrower as a point.', 'Find the boundary with the widest empty corridor between the two groups.', 'A new applicant is judged by which side she falls on.'],
+    maths: () => fx(`${sym('w', 'w')} · ${sym('x', 'x')} + ${sym('b', 'b')} = 0`, null, 'In words: the set of points sitting exactly on the boundary.') + legend([['w', 'w', 'The direction the boundary faces.', ''], ['x', 'x', 'A person\'s facts.', ''], ['b', 'b', 'Where the boundary sits.', '']]),
+    example: () => `<p>On our test it ranked risk about as well as logistic regression (${M.svm.auc.toFixed(2)} vs ${M.logreg.auc.toFixed(2)}). But it gives a side of the line, not a chance, so we had to bolt on an extra step. And it has no weights table to show a court.</p>`,
+    good: ['Elegant on small, clean datasets'], bad: ['No chance without extra work', 'Slow on millions of rows', 'Hard to explain'], verdict: 'Considered and rejected.',
+    quiz: {q: 'What does an SVM not give you that the money rule needs?', a: ['A chance of not repaying', 'A decision', 'A boundary'], right: 0, why: 'The rule "say no above the line" needs a real percentage.'}},
+  mlp: {name: 'Neural network', grp: 'Considered, not used', tag: ['warn', 'Later'],
+    what: 'Layers of tiny points cards feeding into each other. Excellent on images, text and long sequences. On a table with one row per person it rarely beats boosting.',
+    picture: 'A committee of committees. Each layer summarises the one before.',
+    steps: ['The first layer mixes the 15 facts into intermediate signals.', 'The next layer mixes those again.', 'A final unit turns everything into one chance.', 'Training nudges every connection a little at a time.'],
+    maths: () => fx(`${sym('h', 'h')} = squash( ${sym('W', 'W₁')} × ${sym('x', 'x')} ) &nbsp;&nbsp;then&nbsp;&nbsp; ${sym('p', 'p')} = squash( ${sym('W', 'W₂')} × ${sym('h', 'h')} )`, null, 'In words: mix the facts, squash; mix again, squash into a chance.') + legend([['x', 'x', 'Her 15 facts.', ''], ['W', 'W', 'Tables of connection strengths, learned in training.', 'thousands'], ['h', 'h', 'Intermediate signals the network invents.', ''], ['p', 'p', 'Her chance of not repaying.', '']]),
+    example: () => `<p>On our test it ranked risk at ${M.mlp.auc.toFixed(2)}, below EBM and XGBoost (${M.ebm.auc.toFixed(2)}), and it cannot explain itself.</p><p>Where it could earn a place later: reading a person's raw sequence of M-PESA transactions and producing <b>new features</b> that feed the explainable model.</p>`,
+    good: ['Learns from raw sequences'], bad: ['No better here', 'A black box'], verdict: 'Not for the decision. Possibly later, as a feature-maker.',
+    quiz: {q: 'If we ever use a neural network, where would it sit?', a: ['Making the final decision', 'Producing extra features that an explainable model then uses', 'Replacing Doris'], right: 1, why: 'The decision itself must stay explainable.'}},
+  jev: {name: 'Jev and LLMs', grp: 'Considered, not used', tag: ['warn', 'Around it'],
+    what: '<b>Jev</b> (jevai.net) is a hosted decision API. You send it some text or an image plus the shape of answer you want, and it returns a typed decision, a score and a confidence. Big language models such as Gemini or Claude can be asked to classify things too.',
+    picture: 'A very well-read temp worker. Brilliant at sorting messy paperwork. Not the person who should sign loan refusals.',
+    steps: ['You describe the decision and the answer format.', 'The service reads the input.', 'It returns a structured answer with a confidence.'],
+    maths: () => `<div class="scroll"><table><thead><tr><th></th><th>Our decision model</th><th>Jev or an LLM</th></tr></thead><tbody><tr><td><b>Where the data goes</b></td><td>Stays inside Safaricom</td><td>Sent to an outside company</td></tr><tr><td><b>What it can show a court</b></td><td>Every feature and its weight</td><td>A confidence number only</td></tr><tr><td><b>Same answer next month?</b></td><td>Yes, until we retrain it ourselves</td><td>The vendor can change the model</td></tr><tr><td><b>Speed</b></td><td>About a millisecond</td><td>Much slower, paid per call</td></tr><tr><td><b>Built for</b></td><td>Tables of numbers</td><td>Text and images</td></tr></tbody></table></div>`,
+    example: () => `<p><b>Where they do fit, around the decision:</b></p><ul class="clean"><li>Sorting messy merchant names into business categories.</li><li>Routing support tickets, reading documents.</li><li>Turning the reasons on a decision slip into a polite customer message.</li></ul><p>And Jev's interface is the right pattern to copy: send the context, get back a typed decision, a score and reasons. That is our Decision API, with an explainable model inside.</p>`,
+    good: ['Strong on messy text', 'A clean interface worth copying'], bad: ['Customer data would leave Safaricom', 'No weights to defend a refusal', 'The model can change underneath us'],
+    verdict: 'Not for the lending decision. Useful for the text jobs around it.',
+    quiz: {q: 'Marvin asks: "Why not just call Jev for the loan decision?"', a: ['It is too expensive', 'Data would leave Safaricom, it can\'t show feature weights, and the vendor can change the model', 'It doesn\'t have an API'], right: 1, why: 'Privacy, defensibility and reproducibility. We copy its interface and keep our own model inside.'}},
+  kmeans: {name: 'K-means', grp: 'For marketing', tag: ['info', 'Segments'],
+    what: 'Groups similar people together. There is no right answer to learn from, so it doesn\'t predict anything. It is for targeting, not lending.',
+    picture: 'Placing K shops so that every customer is close to one.',
+    steps: ['Choose how many groups, K.', 'Drop K centres at random.', 'Put every person in the group of the nearest centre.', 'Move each centre to the middle of its group.', 'Repeat the last two steps until nothing moves.'],
+    maths: () => fx(`make &nbsp;${sym('S', 'Σ')} ( distance from each ${sym('x', 'person')} to their ${sym('m', 'group centre')} )² &nbsp;as small as possible`, null, 'In words: everyone should be as close as possible to the centre of their own group.') + legend([['S', 'Σ', 'Add up over every person.', ''], ['x', 'person', 'One customer\'s facts.', ''], ['m', 'centre', 'The average member of a group.', D.segments.k + ' groups']]),
+    example: () => { const P = D.segments.profiles; return `<p>It found ${D.segments.k} groups in our data. Their non-repayment rates differ, from ${pct(Math.min(...P.map(s => s.default)), 0)} to ${pct(Math.max(...P.map(s => s.default)), 0)}. On Safaricom data this runs on ward totals with at least 15 people, never on individuals: "this ward has many young smartphone users and few of them use SportyBet".</p>`; },
+    good: ['Fast and easy to explain'], bad: ['You must choose K', 'A person has to name the groups'], verdict: 'For the next product: who and where to target.',
+    quiz: {q: 'Why can\'t K-means decide who gets a loan?', a: ['It never learns from who repaid, it only groups similar people', 'It is too slow', 'It needs images'], right: 0, why: 'Lending needs a model that learned from outcomes.'}},
 };
-const AFTER = {
-  logreg: () => {
-    const r = lrScore(W), W2 = 520, H = 150, P = 30, X = v => P + (v + 6) / 12 * (W2 - 2 * P), Y = v => H - P - v * (H - 2 * P); let path = ''; for (let t = -6; t <= 6.001; t += .1) path += (path ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(sig(t)).toFixed(1);
-    const zc = Math.max(-6, Math.min(6, r.z));
-    $('#sigPlot').innerHTML = `<svg viewBox="0 0 ${W2} ${H}" width="100%" role="img" aria-label="S-curve"><line class="axis" x1="${P}" y1="${Y(0)}" x2="${W2 - P}" y2="${Y(0)}"/><line class="axis" x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(1)}"/><path d="${path}" fill="none" stroke="${css('--accent')}" stroke-width="2"/><circle cx="${X(zc)}" cy="${Y(sig(zc))}" r="5" fill="${css('--s2')}"/><text x="${P}" y="${H - 10}">−600 points</text><text x="${W2 - P}" y="${H - 10}" text-anchor="end">+600 points</text><text x="${X(0) + 4}" y="${Y(1) + 10}">100%</text><text x="${X(0) + 4}" y="${Y(0) - 4}">0%</text><text x="${Math.min(X(zc) + 10, W2 - 160)}" y="${Math.max(Y(sig(zc)) - 10, 14)}" style="fill:${css('--fg')}">Wanjiku: ${pts(r.z)} → ${pct(r.p)}</text></svg>`;
-    const lad = () => { const p = $('#ladIn').value / 100, o = p / (1 - p); $('#ladder').innerHTML = `<div class="rung"><span class="tiny muted">Probability · 0 to 1</span><span class="v">${pct(p, 0)}</span><span class="tiny">${Math.round(p * 100)} in 100 don't repay</span></div><div class="rung"><span class="tiny muted">Odds · 0 to ∞</span><span class="v">${o < 1 ? '1 : ' + (1 / o).toFixed(1) : o.toFixed(1) + ' : 1'}</span><span class="tiny">defaulters : payers</span></div><div class="rung"><span class="tiny muted">Log-odds · −∞ to +∞</span><span class="v">${sgn(Math.log(o))}</span><span class="tiny">= ${pts(Math.log(o))} risk points</span></div>`; };
-    $('#ladIn').oninput = lad; lad();
-    const loss = () => { lossP = $('#lossP').value / 100; $('#lossPl').textContent = pct(lossP, 0); const L = -(lossY * Math.log(lossP) + (1 - lossY) * Math.log(1 - lossP));
-      $('#lossNum').innerHTML = `${lossY ? 'Didn\'t repay' : 'Repaid'}, model said ${pct(lossP, 0)} → penalty = −log(${lossY ? lossP.toFixed(2) : (1 - lossP).toFixed(2)}) = <b>${L.toFixed(2)}</b> ${L > 2 ? '(confident and wrong: big penalty)' : L < .3 ? '(about right: small penalty)' : ''}`;
-      const ptsL = []; for (let q = .01; q <= .99; q += .01) ptsL.push([q, -(lossY * Math.log(q) + (1 - lossY) * Math.log(1 - q))]);
-      lineChart($('#lossPlot'), [{pts: ptsL, color: '--bad', end: [lossP, L]}], {xMin: 0, xMax: 1, yMin: 0, yMax: 4.7, xLab: 'model\'s prediction', yLab: 'penalty', xFmt: v => pct(v, 0), yFmt: v => v.toFixed(1), h: 190});
-      const x = 0.40, step = 0.1, g = (lossP - lossY) * x;
-      $('#updNum').innerHTML = `Example: her "share paid late" = 40%, she ${lossY ? 'didn\'t repay' : 'repaid'}, model said ${pct(lossP, 0)}: change = −${step} × (${lossP.toFixed(2)} − ${lossY}) × ${x} = <b>${sgn(-step * g, 3)}</b> → the late-payment weight goes ${-g > 0 ? 'up: the model learns lateness is riskier' : 'down: it was too harsh'}.`; };
-    document.querySelectorAll('[data-ly]').forEach(b => b.onclick = () => { lossY = +b.dataset.ly; document.querySelectorAll('[data-ly]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.ly === lossY))); loss(); });
-    $('#lossP').oninput = loss; loss();
-  },
-  ebm: () => ['LATE_SHARE', 'BUREAU_SCORE_3', 'YEARS_EMPLOYED'].forEach(f => curveChart($('#cv-' + f), f)),
-  xgb: () => lineChart($('#boostChart'), [{pts: D.teach.boost_curve, color: '--s2', dots: true}], {xMin: 1, xMax: 500, logx: true, xTicks: [1, 3, 10, 25, 50, 100, 250, 500], yMin: .68, yMax: .77, xLab: 'number of trees', yLab: 'ranking score', yFmt: v => v.toFixed(2), h: 200}),
-  forest: () => lineChart($('#forestChart'), [{pts: D.teach.forest_curve, color: '--s5', dots: true}], {xMin: 1, xMax: 300, logx: true, xTicks: [1, 3, 10, 30, 100, 300], yMin: .65, yMax: .76, xLab: 'trees averaged', yLab: 'ranking score', yFmt: v => v.toFixed(2), h: 200}),
-  tree: () => { const g = () => { const q = $('#giniIn').value / 100, G = 1 - q * q - (1 - q) * (1 - q); $('#giniL').textContent = pct(q, 0); $('#giniNum').innerHTML = `G = 1 − (${q.toFixed(2)}² + ${(1 - q).toFixed(2)}²) = <b>${G.toFixed(3)}</b> ${G < .1 ? '(nearly pure)' : G > .45 ? '(very mixed)' : ''}`; }; $('#giniIn').oninput = g; g(); },
-};
+const LORDER = ['logreg', 'ebm', 'xgb', 'tree', 'forest', 'linreg', 'svm', 'mlp', 'jev', 'kmeans'];
+let lSel = 'logreg';
+function renderLesson() {
+  const pk = $('#picker'); pk.innerHTML = ''; let g = null, grp = '';
+  LORDER.forEach(k => { const L = LESSONS[k]; if (L.grp !== grp) { grp = L.grp; g = el('div', {class: 'g'}, `<span>${grp}</span>`); pk.append(g); } const b = el('button', {class: 'btn', 'aria-pressed': String(k === lSel)}, L.name); b.onclick = () => { lSel = k; if (L.slip) benchModel = L.slip; $('#benchSlip').innerHTML = slip(benchModel, W, 'Wanjiku'); renderLesson(); }; g.append(b); });
+  const L = LESSONS[lSel], qa = answered[lSel];
+  const row = (n, lab, sub, body) => `<div class="row"><div class="lab"><b>${n} · ${lab}</b>${sub}</div><div class="body">${body}</div></div>`;
+  $('#lesson').innerHTML = `<div class="lhead"><h2>${L.name}</h2><span class="chip ${L.tag[0]}">${L.tag[1]}</span></div>`
+    + row(1, 'What it is', 'the definition', `<p>${L.what}</p>`)
+    + row(2, 'Picture it', 'the analogy', `<p class="picture">${L.picture}</p>`)
+    + row(3, 'How it works', 'step by step', `<ol class="steps">${L.steps.map(s => `<li><span>${s}</span></li>`).join('')}</ol>`)
+    + row(4, 'The maths', 'click a blue symbol', L.maths())
+    + row(5, 'Wanjiku', 'worked example', L.example())
+    + row(6, 'Verdict', 'for our problem', `<div class="pc"><div><h3 style="color:var(--ok)">Good at</h3><ul class="clean small">${L.good.map(x => `<li>${x}</li>`).join('')}</ul></div><div><h3 style="color:var(--bad)">Weak at</h3><ul class="clean small">${L.bad.map(x => `<li>${x}</li>`).join('')}</ul></div></div><p class="say">${L.verdict}</p>`)
+    + row(7, 'Check yourself', 'one question', `<p><b>${L.quiz.q}</b></p><div class="quiz">${L.quiz.a.map((a, i) => `<button type="button" data-q="${i}" class="${qa == null ? '' : i === L.quiz.right ? 'right' : i === qa ? 'wrong' : ''}">${a}</button>`).join('')}</div>${qa == null ? '' : `<p class="small">${qa === L.quiz.right ? 'Correct. ' : 'Not quite. '}${L.quiz.why}</p>`}`);
+  if (L.after) L.after();
+}
+$('#lesson').addEventListener('click', ev => {
+  const s = ev.target.closest('button.sym'); if (s) { s.closest('.row').querySelectorAll('table.legend tr').forEach(tr => tr.classList.toggle('hit', tr.dataset.s === s.dataset.s)); return; }
+  const q = ev.target.closest('[data-q]'); if (q) { answered[lSel] = +q.dataset.q; renderLesson(); }
+});
+$('#lesson').addEventListener('toggle', ev => { const d = ev.target; if (d.dataset && d.dataset.d) { if (d.open) opened.add(d.dataset.d); else opened.delete(d.dataset.d); } }, true);
 
 /* ================= RESULTS ================= */
-let labSel = 'logreg';
+let rSel = 'logreg';
 function renderResults() {
   const e = econ(), all = approveAll(e);
-  $('#manualRow').hidden = $('#inMode').value !== 'manual';
-  $('#cutLbl').textContent = pct(M.logreg.grid[+$('#inCut').value].c, 1);
-  $('#labMeta').textContent = `Each model learned from ${fmt(D.meta.train)} past loans and was tested on ${fmt(D.meta.test)} it had never seen.`;
-  const rows = ORDER.map(k => { const g = pickCut(k, e); return {k, g, prof: profitAt(g, e)}; }).sort((a, b) => b.prof - a.prof);
+  $('#resLede').textContent = `Each model learned from ${fmt(D.meta.train)} past loans, then was tested on ${fmt(D.meta.test)} loans it had never seen. Click a model to look inside.`;
+  const rows = ORDER.map(k => { const g = bestCut(k, e); return {k, g, prof: profitAt(g, e)}; }).sort((a, b) => b.prof - a.prof), mx = Math.max(...rows.map(r => r.prof), all);
+  $('#pbars').innerHTML = rows.map(r => `<button class="pbar" type="button" data-m="${r.k}" aria-pressed="${r.k === rSel}"><span><b>${NAME[r.k]}</b>${r.k === 'logreg' ? ' <span class="chip info">v1</span>' : ''}</span><span class="t"><i style="width:${Math.max(0, r.prof / mx * 100)}%;background:var(${COLOR[r.k]})"></i></span><span class="v">${kesM(r.prof)}</span><span class="x"><span class="chip ${EXPL[r.k][0]}">${EXPL[r.k][1]}</span></span></button>`).join('')
+    + `<div class="pbar static"><span class="muted">No model: approve everyone</span><span class="t"><i style="width:${Math.max(0, all / mx * 100)}%;background:var(--muted)"></i></span><span class="v">${kesM(all)}</span><span class="x"></span></div>`;
+  $$('#pbars [data-m]').forEach(b => b.onclick = () => { rSel = b.dataset.m; renderResults(); });
   const R = k => rows.find(r => r.k === k), lr = R('logreg'), eb = R('ebm'), xg = R('xgb');
-  $('#headline').innerHTML = [['Approve everyone', kesM(all), 'per 10,000 applicants'], ['Logistic (v1)', kesM(lr.prof), `+${pct(lr.prof / all - 1, 0)} vs approve-all`], ['EBM (challenger)', kesM(eb.prof), `${sgn((eb.prof - lr.prof) / 1e3, 0)}K vs logistic`], ['XGBoost (benchmark)', kesM(xg.prof), `ranking ${M.xgb.auc.toFixed(3)} vs EBM ${M.ebm.auc.toFixed(3)}`]]
-    .map(s => `<div class="panel stat"><span class="k">${s[0]}</span><span class="v">${s[1]}</span><span class="d">${s[2]}</span></div>`).join('');
-  $('#board').innerHTML = ''; $('#boardTech').innerHTML = '';
-  rows.forEach((r, i) => {
-    const m = M[r.k], appr = (r.g.tn + r.g.fn) / D.meta.test, bad = r.g.fn / (r.g.fn + r.g.tn);
-    const tr = el('tr', {class: r.k === labSel ? 'sel' : '', tabindex: '0'}, `<td><i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(${COLOR[r.k]})"></i><b>${m.label}</b>${r.k === 'logreg' ? ' <span class="chip info">v1</span>' : ''}${i === 0 ? ' <span class="chip ok">Most profit</span>' : ''}</td><td class="num">${kesM(r.prof)}</td><td class="num" style="color:var(${r.prof >= all ? '--ok' : '--bad'})">${r.prof >= all ? '+' : ''}${kesM(r.prof - all)}</td><td class="num">${pct(appr)}</td><td class="num">${pct(bad)}</td><td class="num">${m.auc.toFixed(3)}</td><td><span class="chip ${EXPL[r.k][0]}">${EXPL[r.k][1]}</span></td>`);
-    tr.onclick = () => { labSel = r.k; renderResults(); }; tr.onkeydown = ev => { if (ev.key === 'Enter') { labSel = r.k; renderResults(); } };
-    $('#board').append(tr);
-    $('#boardTech').insertAdjacentHTML('beforeend', `<tr><td>${m.label}</td><td class="num">${m.auc.toFixed(4)}</td><td class="num">${(2 * m.auc - 1).toFixed(3)}</td><td class="num">${m.ks.toFixed(3)}</td><td class="num">${m.prauc.toFixed(3)}</td><td class="num">${m.brier.toFixed(4)}</td><td class="num">${m.logloss.toFixed(4)}</td><td class="num">${pct(r.g.c, 1)}</td><td class="num">${m.train_s} s</td></tr>`);
-  });
-  const g = pickCut(labSel, e), m = M[labSel], c = v => fmt(v * scale);
-  $('#cmTitle').textContent = `10,000 applicants through ${m.label}`;
-  $('#cm').innerHTML = `<div class="h"></div><div class="h">Says no</div><div class="h">Says yes</div><div class="h">Wouldn't pay</div><div class="good"><b>${c(g.tp)}</b>Loss avoided</div><div class="loss"><b>${c(g.fn)}</b>Lent and lost: ${kes(g.fn * scale * e.Lo)}</div><div class="h">Would pay</div><div class="miss"><b>${c(g.fp)}</b>Turned away: ${kes(g.fp * scale * e.M)} fees missed</div><div class="good"><b>${c(g.tn)}</b>Repaid: ${kes(g.tn * scale * e.M)}</div>`;
-  $('#cmNote').textContent = `Line at ${pct(g.c, 1)}. Bad loans among approved fall from ${pct(D.meta.default_rate)} to ${pct(g.fn / (g.fn + g.tn))}. "Accuracy" misleads here: approving everyone is already ${pct(1 - D.meta.default_rate, 0)} accurate.`;
-  let lo = Infinity, hi = -Infinity;
-  const series = ORDER.map(k => { const p2 = M[k].grid.map(gg => [gg.c, profitAt(gg, e) / 1e6]); p2.forEach(p => { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }); const b = pickCut(k, e); return {pts: p2, color: COLOR[k], hi: k === labSel, end: k === labSel ? [b.c, profitAt(b, e) / 1e6] : null}; });
-  const pad = (hi - lo) * .08, pStar = e.M / (e.M + e.Lo);
-  lineChart($('#profitChart'), series, {xMin: 0, xMax: .4, yMin: Math.min(0, lo - pad), yMax: hi + pad, xLab: 'decline if risk ≥', yLab: 'profit', xFmt: v => pct(v, 0), yFmt: v => v.toFixed(1) + 'M', marks: pStar < .4 ? [{x: pStar, label: 'break-even ' + pct(pStar)}] : []});
-  $('#profitLegend').innerHTML = ORDER.map(k => `<span><i style="background:var(${COLOR[k]})"></i>${M[k].label}</span>`).join('');
-  const mx = Math.max(...ORDER.flatMap(k => M[k].calib.flat())) * 1.05;
-  lineChart($('#calChart'), ORDER.map(k => ({pts: M[k].calib, color: COLOR[k], hi: k === labSel, dots: true})), {xMax: mx, yMax: mx, xLab: 'predicted', yLab: 'actual', xFmt: v => pct(v, 0), yFmt: v => pct(v, 0), diag: true});
-  lineChart($('#rocChart'), ORDER.map(k => ({pts: M[k].roc, color: COLOR[k], hi: k === labSel})), {xLab: 'good customers wrongly declined', yLab: 'defaulters caught', xFmt: v => pct(v, 0), yFmt: v => pct(v, 0), diag: true});
-  $('#fairModel').textContent = '· ' + m.label;
+  $('#resSay').innerHTML = `Any decent model beats approving everyone by a wide margin. Logistic regression lifts profit about ${pct(lr.prof / all - 1, 0)}. EBM ${eb.prof >= lr.prof ? 'adds' : 'loses'} roughly ${kes(Math.abs(eb.prof - lr.prof) / 10000)} per applicant against it and still explains itself. XGBoost and EBM are within ${kes(Math.abs(xg.prof - eb.prof) / 10000)} per applicant of each other, so insisting on an explainable model costs almost nothing here.`;
+  const g = bestCut(rSel, e), c = v => fmt(v * scale);
+  $('#cmTitle').textContent = `10,000 applicants through ${NAME[rSel]}`;
+  $('#cm').innerHTML = `<div class="h"></div><div class="h">Model says no</div><div class="h">Model says yes</div><div class="h">Wouldn't have paid</div><div class="good"><b>${c(g.tp)}</b>Loss avoided</div><div class="loss"><b>${c(g.fn)}</b>Lent and lost</div><div class="h">Would have paid</div><div class="miss"><b>${c(g.fp)}</b>Good customer turned away</div><div class="good"><b>${c(g.tn)}</b>Repaid</div>`;
+  $('#cmNote').textContent = `Line at ${pct(g.c)}. Bad loans among approved customers fall from about ${pct(D.meta.default_rate, 0)} to ${pct(g.fn / (g.fn + g.tn), 0)}. We don't rank by "accuracy": approving everyone is already ${pct(1 - D.meta.default_rate, 0)} accurate and makes the least money.`;
+  const leg = ORDER.map(k => `<span><i style="background:var(${COLOR[k]})"></i>${NAME[k]}</span>`).join(''); $('#legA').innerHTML = leg; $('#legB').innerHTML = leg;
+  const mxc = Math.max(...ORDER.flatMap(k => M[k].calib.flat())) * 1.05;
+  lineChart($('#calChart'), ORDER.map(k => ({pts: M[k].calib, color: COLOR[k], hi: k === rSel, dots: true})), {xMax: mxc, yMax: mxc, xLab: 'what the model predicted', xFmt: v => pct(v, 0), yFmt: v => pct(v, 0), diag: true});
+  let lo = Infinity, hi = -Infinity; const series = ORDER.map(k => { const p2 = M[k].grid.map(gg => [gg.c, profitAt(gg, e) / 1e6]); p2.forEach(p => { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }); const b = bestCut(k, e); return {pts: p2, color: COLOR[k], hi: k === rSel, end: k === rSel ? [b.c, profitAt(b, e) / 1e6] : null}; });
+  const pad = (hi - lo) * .08, ps = e.M / (e.M + e.Lo);
+  lineChart($('#profitChart'), series, {xMin: 0, xMax: .4, yMin: Math.min(0, lo - pad), yMax: hi + pad, xLab: 'say no when the chance is at least', xFmt: v => pct(v, 0), yFmt: v => v.toFixed(1) + 'M', marks: ps < .4 ? [{x: ps, label: 'fee ÷ (fee + loss)'}] : []});
   const lab = k => ({'gender:F': 'Women', 'gender:M': 'Men'})[k] || 'Age ' + k.split(':')[1];
-  const keys = Object.keys(g.g).sort((a, b) => a.startsWith('gender') === b.startsWith('gender') ? a.localeCompare(b) : a.startsWith('gender') ? -1 : 1);
-  $('#fair').innerHTML = keys.map(k => { const [n, a, d] = g.g[k]; return `<tr><td>${lab(k)}</td><td class="num">${fmt(n)}</td><td class="num">${pct(a / n)}</td><td class="num">${pct(d / Math.max(a, 1))}</td></tr>`; }).join('');
+  $('#fair').innerHTML = Object.keys(g.g).sort((a, b) => a.startsWith('gender') === b.startsWith('gender') ? a.localeCompare(b) : a.startsWith('gender') ? -1 : 1).map(k => { const [n, a, d] = g.g[k]; return `<tr><td>${lab(k)}</td><td class="n">${fmt(n)}</td><td class="n">${pct(a / n, 0)}</td><td class="n">${pct(d / Math.max(a, 1))}</td></tr>`; }).join('');
+  $('#boardTech').innerHTML = rows.map(r => { const m = M[r.k]; return `<tr><td>${NAME[r.k]}</td><td class="n">${m.auc.toFixed(4)}</td><td class="n">${(2 * m.auc - 1).toFixed(3)}</td><td class="n">${m.ks.toFixed(3)}</td><td class="n">${m.prauc.toFixed(3)}</td><td class="n">${m.brier.toFixed(4)}</td><td class="n">${pct(r.g.c)}</td><td class="n">${m.train_s} s</td></tr>`; }).join('');
 }
-['#inLoan', '#inFee', '#inLgd', '#inMode', '#inCut'].forEach(s => $(s).addEventListener('input', () => { renderResults(); renderScorer(); renderGates(); refreshW(); }));
 
 /* ================= TRY ================= */
 const cur = {}; let reasonModel = 'logreg';
-function buildInputs() {
-  const host = $('#inputs'); host.innerHTML = '<h3>Applicant</h3><p class="tiny muted">Grey text: the Safaricom signal each fact stands in for.</p>';
-  FEAT.forEach(f => { const [lo, hi] = rng(f), F = FL[f]; const w = el('div', {class: 'feat'}, `<div class="row"><span>${F.label}</span><span id="val-${f}"></span></div><span class="sub2">${F.safaricom}</span><input type="range" id="in-${f}" min="0" max="1000" aria-label="${F.label}"><label class="unk"><input type="checkbox" id="unk-${f}"> unknown</label>`); host.append(w);
-    const r = w.querySelector('input[type=range]'), u = w.querySelector('input[type=checkbox]');
-    r.oninput = () => { cur[f] = lo + (hi - lo) * r.value / 1000; if (f === 'REGION_RATING') cur[f] = Math.round(cur[f]); u.checked = false; renderScorer(); };
-    u.onchange = () => { cur[f] = u.checked ? null : lo + (hi - lo) * r.value / 1000; renderScorer(); }; });
+function buildTry() {
+  const host = $('#inputs'); host.innerHTML = '<h3>The applicant</h3><p class="tiny muted">Grey: the Safaricom signal each fact stands in for.</p>';
+  FEAT.forEach(f => { const [lo, hi] = rng(f), w = el('div', {class: 'feat'}, `<div class="r"><span>${FL[f].label}</span><span id="val-${f}"></span></div><span class="s">${FL[f].safaricom}</span><input type="range" id="in-${f}" min="0" max="1000" aria-label="${FL[f].label}">`); host.append(w);
+    w.querySelector('input').oninput = ev => { cur[f] = lo + (hi - lo) * ev.target.value / 1000; if (f === 'REGION_RATING') cur[f] = Math.round(cur[f]); renderTry(); }; });
+  D.presets.forEach((p, i) => { const b = el('button', {class: 'btn', 'aria-pressed': String(i === 1)}, `${p.name} <span class="small" style="opacity:.7">· really ${p.actual ? 'didn\'t repay' : 'repaid'}</span>`); b.onclick = () => { $$('#presets .btn').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); setApplicant(p.x); }; $('#presets').append(b); });
 }
-function setApplicant(x) { FEAT.forEach(f => { cur[f] = x[f]; const [lo, hi] = rng(f); $('#in-' + f).value = x[f] == null ? 500 : Math.round(Math.max(0, Math.min(1, (x[f] - lo) / (hi - lo))) * 1000); $('#unk-' + f).checked = x[f] == null; }); renderScorer(); }
-function renderScorer() {
+function setApplicant(x) { FEAT.forEach(f => { cur[f] = x[f]; const [lo, hi] = rng(f); $('#in-' + f).value = x[f] == null ? 500 : Math.round(Math.max(0, Math.min(1, (x[f] - lo) / (hi - lo))) * 1000); }); renderTry(); }
+function renderTry() {
   if (!Object.keys(cur).length) return;
   FEAT.forEach(f => { $('#val-' + f).textContent = fmtFeat(f, cur[f]); });
-  const e = econ();
-  $('#pdcards').innerHTML = ['logreg', 'ebm', 'xgb'].map(k => { const r = SCORERS[k](cur), cut = pickCut(k, e).c, d = decision(r.p, cut); return `<div class="pdcard" style="border-color:var(${k === reasonModel ? '--accent' : '--line'})"><span class="small muted">${M[k].label}${k === 'logreg' ? ' (v1)' : ''}</span><span class="v">${pct(r.p)}</span><span class="tiny muted">risk · line at ${pct(cut, 1)}</span><span class="chip ${d[0]}">${d[1]}</span></div>`; }).join('');
-  $('#reasonTabs').innerHTML = '';
-  [['logreg', 'Logistic: exact'], ['ebm', 'EBM: exact'], ['xgb', 'XGBoost: estimated']].forEach(([k, l]) => { const b = el('button', {class: 'btn', 'aria-pressed': String(k === reasonModel)}, l); b.onclick = () => { reasonModel = k; renderScorer(); }; $('#reasonTabs').append(b); });
+  $('#trySlips').innerHTML = ['logreg', 'ebm', 'xgb'].map(k => slip(k, cur)).join('');
+  $('#reasonTabs').innerHTML = ''; [['logreg', 'Logistic'], ['ebm', 'EBM'], ['xgb', 'XGBoost']].forEach(([k, l]) => { const b = el('button', {class: 'btn', 'aria-pressed': String(k === reasonModel)}, l); b.onclick = () => { reasonModel = k; renderTry(); }; $('#reasonTabs').append(b); });
   const r = SCORERS[reasonModel](cur), items = FEAT.map(f => [f, r.contrib[f]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])), mx = Math.max(.3, ...items.map(i => Math.abs(i[1])));
-  $('#reasonBars').innerHTML = items.slice(0, 8).map(([f, c]) => { const w = Math.abs(c) / mx * 50; return `<div class="bar"><span>${FL[f].label} <span class="muted">(${fmtFeat(f, cur[f])})</span></span><span class="track"><i style="left:${c >= 0 ? 50 : 50 - w}%;width:${w}%;background:var(${c >= 0 ? '--bad' : '--ok'})"></i><span class="mid"></span></span><span>${pts(c)}</span></div>`; }).join('');
-  const up = items.filter(i => i[1] > 0).slice(0, 3), down = items.filter(i => i[1] < 0).slice(0, 2), d = decision(r.p, pickCut(reasonModel, e).c);
-  $('#reasonText').innerHTML = `<p class="say">${d[1]}, at ${pct(r.p)} risk. ${up.length ? 'Main concerns: ' + up.map(i => `${FL[i[0]].label.toLowerCase()} (${fmtFeat(i[0], cur[i[0]])})`).join('; ') + '.' : ''}${down.length ? ' In their favour: ' + down.map(i => `${FL[i[0]].label.toLowerCase()} (${fmtFeat(i[0], cur[i[0]])})`).join('; ') + '.' : ''}</p><p class="tiny muted">${reasonModel === 'xgb' ? 'XGBoost reasons are estimated by tracing its trees (production would use SHAP).' : 'These add up exactly to the score: nothing estimated.'}</p>`;
+  $('#reasonBars').innerHTML = items.slice(0, 7).map(([f, c]) => { const w = Math.abs(c) / mx * 50; return `<div class="bar"><span>${FL[f].label} <span class="muted">(${fmtFeat(f, cur[f])})</span></span><span class="track"><i style="left:${c >= 0 ? 50 : 50 - w}%;width:${w}%;background:var(${c >= 0 ? '--bad' : '--ok'})"></i><span class="mid"></span></span><span>${pts(c)}</span></div>`; }).join('');
+  $('#reasonNote').textContent = reasonModel === 'xgb' ? 'Numbers are risk points. XGBoost\'s reasons are estimates made by tracing its trees.' : 'Numbers are risk points. They add up exactly to the score: nothing is estimated.';
 }
-function buildPresets() { D.presets.forEach((p, i) => { const b = el('button', {class: 'btn', 'aria-pressed': String(i === 1)}, `${p.name} <span class="muted small">· really ${p.actual ? 'defaulted' : 'repaid'}</span>`); b.onclick = () => { document.querySelectorAll('#presets .btn').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); setApplicant(p.x); }; $('#presets').append(b); }); }
 
-/* ================= DECISION API ================= */
-const SERVE = [['Partner app', 'Customer taps "Borrow". The app calls /v1/decision with a consent ID.', 5], ['Zuri API', 'Checks the partner key, routes the request.', 5], ['Features', 'Her facts from the feature team\'s Doris tables, cached for speed.', 10], ['Score', 'v1 logistic: weights × features → risk %.', 1], ['Decide', 'Compare with the partner\'s line: approve, starter loan or decline.', 1], ['Respond + log', 'Decision, risk, reasons back; audit copy saved.', 6]];
+/* ================= SERVE ================= */
+const SERVE = [['Partner app', 'The customer taps "Borrow". The app calls the Decision API with her consent ID.', 5], ['Zuri API', 'Checks the partner\'s key and passes the request on.', 5], ['Look up her facts', 'Yesterday\'s features from the feature team\'s Doris tables, held in a fast cache.', 10], ['Score', 'The model turns her facts into a chance of not repaying.', 1], ['Decide', 'Compare with the partner\'s line: yes, starter loan, or no.', 1], ['Reply and record', 'The slip goes back. A copy is saved for audit and monitoring.', 6]];
 let serveAt = 0;
-function renderServe() { $('#serveLane').innerHTML = SERVE.map((s, i) => `<div class="step${i <= serveAt ? ' on' : ''}"><span class="n">${i + 1} · ~${s[2]} ms</span><b>${s[0]}</b><span class="small muted">${s[1]}</span></div>`).join(''); $('#serveTotal').textContent = `About ${SERVE.slice(0, serveAt + 1).reduce((a, s) => a + s[2], 0)} ms so far (estimates; measured in staging)`; }
+function renderServe() { $('#serveLane').innerHTML = SERVE.map((s, i) => `<div class="st${i <= serveAt ? ' on' : ''}"><span class="n">${i + 1} · about ${s[2]} ms</span><b>${s[0]}</b><span class="small muted">${s[1]}</span></div>`).join(''); $('#serveTotal').textContent = `About ${SERVE.slice(0, serveAt + 1).reduce((a, s) => a + s[2], 0)} ms so far. Estimates, to be measured in staging.`; }
 $('#serveNext').onclick = () => { serveAt = Math.min(SERVE.length - 1, serveAt + 1); renderServe(); };
 $('#servePrev').onclick = () => { serveAt = Math.max(0, serveAt - 1); renderServe(); };
 function renderGates() {
   const e = econ(), lr = bestCut('logreg', e), eb = bestCut('ebm', e), all = approveAll(e);
-  const cal = k => { const c = M[k].calib.at(-1); return [Math.abs(c[0] - c[1]) < .02, `said ${pct(c[0], 0)}, really ${pct(c[1], 0)}`]; };
+  const cal = k => { const c = M[k].calib.at(-1); return [Math.abs(c[0] - c[1]) < .02, `said ${pct(c[0], 0)}, was ${pct(c[1], 0)}`]; };
   const flips = LRW.filter(q => EXPECT[q.f] && Math.sign(q.w) !== EXPECT[q.f]).map(q => FL[q.f].label.toLowerCase());
-  const chip = (ok, txt) => `<span class="chip ${ok === true ? 'ok' : ok === false ? 'bad' : 'warn'}">${ok === true ? 'Pass' : ok === false ? 'Fail' : 'Review'}</span> <span class="small">${txt}</span>`;
-  const rows = [
-    ['Ranks risk well', 'Puts risky people above safe ones', 'Clearly better than a coin flip; challengers must beat v1', chip(true, M.logreg.auc.toFixed(3)), chip(M.ebm.auc > M.logreg.auc + .01, M.ebm.auc.toFixed(3))],
-    ['Makes money', 'Profit per 10,000 on unseen loans', 'Beats approve-all (' + kesM(all) + ')', chip(profitAt(lr, e) > all, kesM(profitAt(lr, e))), chip(profitAt(eb, e) > profitAt(lr, e), kesM(profitAt(eb, e)))],
-    ['Honest percentages', 'When it says 26%, about 26% default', 'Riskiest tenth within 2 points', chip(cal('logreg')[0], cal('logreg')[1]), chip(cal('ebm')[0], cal('ebm')[1])],
-    ['Every weight makes sense', 'No feature pushes the "wrong" way', 'All signs match business sense', chip(flips.length ? null : true, flips.length ? 'check: ' + flips.join(', ') : 'all sensible'), chip(null, 'curves reviewed by risk team')],
-    ['Stable', 'Test applicants look like training ones', 'Stability index below 0.10', chip(null, 'not yet measured'), chip(D.teach.psi < .1, D.teach.psi.toFixed(4))],
-    ['Defensible in court', 'Can show exactly how a decision was made', 'Exact per-feature reasons', chip(true, 'weights table'), chip(null, 'curves table: legal to confirm')],
-  ];
-  $('#gates').innerHTML = rows.map(r => `<tr><td><b>${r[0]}</b></td><td class="small">${r[1]}</td><td class="small">${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+  const chip = (ok, t) => `<span class="chip ${ok === true ? 'ok' : ok === false ? 'bad' : 'warn'}">${ok === true ? 'Pass' : ok === false ? 'Fail' : 'Review'}</span> <span class="small">${t}</span>`;
+  $('#gates').innerHTML = [
+    ['Makes money', 'More profit than approving everyone', chip(profitAt(lr, e) > all, kesM(profitAt(lr, e))), chip(profitAt(eb, e) > profitAt(lr, e), kesM(profitAt(eb, e)))],
+    ['Percentages can be trusted', 'When it says 26%, about 26% don\'t repay', chip(cal('logreg')[0], cal('logreg')[1]), chip(cal('ebm')[0], cal('ebm')[1])],
+    ['Every weight makes sense', 'No feature pushes the wrong way', chip(flips.length ? null : true, flips.length ? 'check ' + flips.join(', ') : 'all sensible'), chip(null, 'risk team reviews the curves')],
+    ['Stable', 'New applicants score like the ones it learned from', chip(null, 'not measured yet'), chip(D.teach.psi < .1, 'stable on the test set')],
+    ['Defensible', 'Can show exactly how a decision was made', chip(true, 'weights table'), chip(null, 'curves: legal to confirm')],
+    ['Fast', 'Answers in time', chip(null, 'measure in staging'), chip(null, 'measure in staging')],
+  ].map(r => `<tr><td><b>${r[0]}</b></td><td class="small">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
 }
 
 /* ================= Q&A ================= */
 function renderQA() {
-  $('#tiers').innerHTML = [['v1 · production', 'Logistic regression', 'Marvin\'s model. Weights table = defensible in court. Also the permanent fallback.', 'info', 'logreg'], ['Challenger', 'EBM', 'Same idea with learned curves; promote only if it wins on Doris data and legal accepts it.', 'ok', 'ebm'], ['Benchmark', 'XGBoost', 'Shows the accuracy ceiling. Not for production decisions.', 'warn', 'xgb']]
-    .map(t => `<div class="panel"><span class="chip ${t[3]}" style="justify-self:start">${t[0]}</span><h3>${t[1]}</h3><p class="small muted">${t[2]}</p><div class="stat"><span class="k">Ranking score</span><span class="v">${M[t[4]].auc.toFixed(3)}</span></div></div>`).join('');
-  const P = D.segments.profiles, med = k => P.map(x => x[k]).sort((a, b) => a - b)[Math.floor(P.length / 2)];
-  const segName = s => [s.age < 38 ? 'Younger' : s.age > 50 ? 'Older' : 'Mid-career', s.income > med('income') ? 'higher-income' : 'lower-income', s.late > .15 ? 'late repayers' : s.region > 2.2 ? 'weaker regions' : s.payment_rate > .06 ? 'short-term borrowers' : 'steady repayers'].join(', ');
   const QA = [
-    ['What is the Decision API?', 'A service partners call when a customer asks for a loan. It returns a decision (approve, starter loan, decline), the risk, and the reasons. Behind it is a decision model: today logistic regression.'],
-    ['Why logistic regression?', 'Each feature is evidence that multiplies the odds of default. The model adds that evidence up on a log scale and converts it to a percentage. The whole model is a table of features and weights that can be shown in court. It always trains to the same answer, and its percentages are honest, which the money rule needs.'],
-    ['Then why test EBM and XGBoost?', 'To know what we\'re giving up. On our data XGBoost ranks risk at ' + M.xgb.auc.toFixed(3) + ' vs logistic ' + M.logreg.auc.toFixed(3) + '. EBM matches XGBoost and is still glass-box. If that gap holds on Doris data, EBM is a strong upgrade; if not, logistic stays.'],
-    ['Is EBM a real thing?', 'Yes: Explainable Boosting Machine, Microsoft Research, open-source InterpretML (2019), from peer-reviewed research. Used where decisions must be justified.'],
-    ['Should we use Jev (jevai.net) for the decision?', 'Not for the lending decision. Customer data would have to leave Safaricom to a third party, it returns a confidence score rather than feature weights we can defend in court, and the model can change under us between versions. Where it fits: messy-text jobs like categorising merchant names or routing tickets. And we copy its good idea: a clean interface where you send the context and get back a typed decision, score and reasons. That is our Decision API, with a glass-box model inside.'],
-    ['What about LLMs like Gemini 4 Argon?', 'Same answer: not for the decision itself (too slow, not reproducible, no weights). LLMs can turn reason codes into customer letters. See "Jev and LLMs" in How the models think.'],
-    ['How do we explain a rejection?', 'Top three features that pushed risk up, in plain words, plus what would change the answer. For logistic these come straight from the weights table.'],
-    ['What if the model is wrong?', 'The line comes from real costs, borderline people get a smaller starter loan, a budgeted share of near-the-line applicants get one anyway so we keep learning, and we monitor and retrain.'],
-    ['What do we need to start?', 'Doris and Iguazio access (via Eneth Kubai), the feature-engineering team\'s tables, the partner\'s real fee and loss per loan, the default definition (30 or 60 days), and a weekly Thursday 3 p.m. working session.'],
+    ['In one line, what are we building?', 'A Decision API. When someone asks a partner for a loan, we predict the chance they won\'t repay, compare it with what the loan earns, and answer yes, a smaller loan, or no, with the reasons.'],
+    ['What exactly are we predicting?', 'One number per applicant: the chance they won\'t repay. A separate money rule turns that number into the decision.'],
+    ['Why logistic regression first?', 'Because the whole model is a table of features and weights. If a declined customer takes us to court, we can show each feature, its weight, and how many points it added. It also gives trustworthy percentages and trains to the same answer every time.'],
+    ['Then why test EBM and XGBoost at all?', `To know what we're giving up. On our test, EBM ranked risk as well as XGBoost (${M.ebm.auc.toFixed(2)} each, logistic ${M.logreg.auc.toFixed(2)}) and still explains every decision. If that holds on Safaricom data, EBM is a safe upgrade. If not, logistic stays.`],
+    ['Is EBM a real thing?', 'Yes. Explainable Boosting Machine, from Microsoft Research\'s open-source InterpretML library, based on published research. It is used where decisions must be justified.'],
+    ['Where does Jev come in?', 'Not for the lending decision: customer data would leave Safaricom, it returns a confidence rather than weights we can defend, and the vendor can change the model. It fits the text jobs around the decision, like sorting merchant names. And we copy its interface: context in, typed decision and reasons out.'],
+    ['How do we explain a refusal?', 'The slip lists the top facts that pushed the risk up, in plain words, plus what would change the answer: "pay your current instalments on time for two months".'],
+    ['What if the model is wrong?', 'It will be sometimes. So the line comes from real costs, borderline people get a smaller starter loan instead of a flat no, we lend to a small budgeted number of near-the-line applicants to keep learning, and we monitor and retrain.'],
+    ['How fast is it?', 'The model answers in about a millisecond. Fetching her facts is the slow part, so they are prepared daily and cached. Target: under a tenth of a second end to end.'],
+    ['How do we know it keeps working?', 'Tests before launch, then live checks on speed, daily checks on whether applicants are changing, weekly on missed first instalments, monthly on real defaults and fairness.'],
+    ['What do you need to start?', 'Doris and Iguazio access through Eneth Kubai, the feature team\'s tables, the partner\'s real fee and loss per loan, a decision on what counts as default (30 or 60 days late), and the weekly Thursday 3 p.m. session.'],
   ];
-  $('#qaList').innerHTML = QA.map((q, i) => `<details class="qa"${i < 2 ? ' open' : ''}><summary>${q[0]}</summary><div><p class="small">${q[1]}</p></div></details>`).join('') +
-    `<details class="qa"><summary>Beyond lending: who to target, and did the KES 380M jersey deal work?</summary><div>
-      <p class="small">The same layer can group customers (K-means) and measure campaigns. Groups found in our data:</p>
-      <div class="cards">${P.map(s => `<div class="seg"><b>${segName(s)}</b><span class="small">${pct(s.size / D.meta.test, 0)} of people</span><span><span class="chip ${s.default > D.meta.default_rate * 1.2 ? 'bad' : s.default < D.meta.default_rate * .85 ? 'ok' : 'warn'}">${pct(s.default)} default</span></span></div>`).join('')}</div>
-      <p class="small">For the jersey: compare new users in fan wards vs similar wards, before and after. Change the numbers:</p>
-      <div class="grid4"><label class="field">Fan wards before<input type="number" id="d1" value="1200"></label><label class="field">Fan wards after<input type="number" id="d2" value="1560"></label><label class="field">Other wards before<input type="number" id="d3" value="1100"></label><label class="field">Other wards after<input type="number" id="d4" value="1265"></label></div>
-      <div class="grid3" id="did"></div></div></details>`;
-  ['#d1', '#d2', '#d3', '#d4'].forEach(s => $(s).addEventListener('input', renderDiD)); renderDiD();
-}
-function renderDiD() {
-  const [a, b, c, d] = ['#d1', '#d2', '#d3', '#d4'].map(s => +$(s).value || 0), rate = c ? d / c : 1, lift = b - a * rate;
-  $('#did').innerHTML = [['Gut-feel claim', sgn(b - a, 0) + '/week', 'raw growth in fan wards'], ['Would happen anyway', '+' + fmt(a * rate - a) + '/week', `other wards grew ${pct(rate - 1, 0)}`], ['Bought by the deal', sgn(lift, 0) + '/week', lift > 0 ? `≈ ${kes(380e6 / (lift * 52))} per new customer` : 'no measurable effect']]
-    .map((s, i) => `<div class="panel stat"><span class="k">${s[0]}</span><span class="v" style="color:var(${i === 2 ? (lift > 0 ? '--ok' : '--bad') : '--fg'})">${s[1]}</span><span class="d">${s[2]}</span></div>`).join('');
+  $('#qaList').innerHTML = QA.map((q, i) => `<details class="qa"${i === 0 ? ' open' : ''}><summary>${q[0]}</summary><div><p>${q[1]}</p></div></details>`).join('')
+    + `<details class="qa"><summary>What about the KES 380M jersey deal?</summary><div><p>That is a different question: did the sponsorship bring customers who wouldn't have come anyway? Compare new users in wards with many fans against similar wards, before and after. Change the numbers:</p><div class="auto"><label class="field">Fan wards, before<input type="number" id="d1" value="1200"></label><label class="field">Fan wards, after<input type="number" id="d2" value="1560"></label><label class="field">Other wards, before<input type="number" id="d3" value="1100"></label><label class="field">Other wards, after<input type="number" id="d4" value="1265"></label></div><p id="did"></p></div></details>`;
+  const did = () => { const [a, b, c, d] = ['#d1', '#d2', '#d3', '#d4'].map(s => +$(s).value || 0), rate = c ? d / c : 1, lift = b - a * rate;
+    $('#did').innerHTML = `Fan wards grew by <b>${fmt(b - a)}</b> new users a week. But the other wards grew ${pct(rate - 1, 0)} too, so <b>${fmt(a * rate - a)}</b> of that would have happened anyway. The deal bought about <b>${fmt(lift)}</b> a week${lift > 0 ? `, roughly ${fmt(lift * 52)} a year, or about <b>${kes(380e6 / (lift * 52))}</b> per new customer` : ''}.`; };
+  ['#d1', '#d2', '#d3', '#d4'].forEach(s => $(s).addEventListener('input', did)); did();
 }
 
 /* ---------- boot ---------- */
-renderLine(); renderStack(); renderData(); renderResults(); buildSliders(); buildInputs(); buildPresets(); setApplicant(D.presets[1].x); renderServe(); renderGates(); renderQA(); refreshW(); route();
-const rerender = () => { renderResults(); if (!$('#v-models').hidden) renderModel(true); };
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rerender);
-new MutationObserver(rerender).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+function renderAll() { renderStart(); renderResults(); renderGates(); renderTry(); $('#benchSlip').innerHTML = slip(benchModel, W, 'Wanjiku'); if (!$('#v-models').hidden) renderLesson(); }
+syncEcon(); buildTry(); syncSliders(); SLIDE.forEach(f => { $('#wv-' + f).textContent = fmtFeat(f, W[f]); });
+setApplicant(D.presets[1].x); renderServe(); renderQA(); renderAll(); route();
+const retheme = () => { renderResults(); if (!$('#v-models').hidden) renderLesson(); };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+new MutationObserver(retheme).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
 })();
 </script>
